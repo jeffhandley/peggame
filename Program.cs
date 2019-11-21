@@ -45,7 +45,9 @@ namespace peggame
                 Console.WriteLine();
                 Console.Write("Choose where to jump from: ");
 
-                var from = ReadPeg(HasPeg);
+                Func<char, bool> CanJumpFrom = (char selectedPeg) => CanJump(pegs, jumps, selectedPeg);
+
+                var from = ReadPeg(CanJumpFrom);
                 Console.WriteLine(from);
 
                 if (from == null) {
@@ -54,20 +56,20 @@ namespace peggame
 
                 Console.Write("Choose where to jump over: ");
 
-                var over = ReadPeg(HasPeg);
+                Func<char, bool> CanJumpTo = (char selectedPeg) => CanJump(pegs, jumps, from.Value, selectedPeg);
+
+                var over = ReadPeg(CanJumpTo);
                 Console.WriteLine(over);
 
-                if (over == null) {
-                    return;
-                }
+                if (over != null) {
+                    foreach (var jump in jumps) {
+                        if (jump.From == from && jump.Over == over) {
+                            var to = jump.To;
 
-                foreach (var jump in jumps) {
-                    if (jump.From == from && jump.Over == over) {
-                        var to = jump.To;
-
-                        pegs[from.Value] = false;
-                        pegs[over.Value] = false;
-                        pegs[to] = true;
+                            pegs[from.Value] = false;
+                            pegs[over.Value] = false;
+                            pegs[to] = true;
+                        }
                     }
                 }
             }
@@ -104,6 +106,24 @@ namespace peggame
                     return null;
                 }
             }
+        }
+
+        static bool CanJump(Dictionary<char, bool> pegs, Jump[] jumps, char from, char? over = (char?)null) {
+            if (pegs[from] == false) {
+                return false;
+            }
+
+            if (over.HasValue && pegs[over.Value] == false) {
+                return false;
+            }
+
+            foreach (var jump in jumps) {
+                if (jump.From == from && pegs[jump.Over] == true && pegs[jump.To] == false && (over == null || over.Value == jump.Over)) {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         static Jump[] GetPossibleJumps() {
