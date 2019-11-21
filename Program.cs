@@ -16,32 +16,24 @@ namespace peggame
 
         static void Main(string[] args)
         {
-            var pegs = new Dictionary<char, bool>();
-            Func<char, bool> HasPeg = (char selectedPeg) => pegs[selectedPeg];
-
-            for (var i = 0; i < PegChars.Length; i++) {
-                pegs[PegChars[i]] = true;
-            }
-
-            PrintPegs(pegs);
-
-            Console.WriteLine();
-            Console.Write("Choose the peg to remove: ");
-
-            var peg = ReadPeg(HasPeg);
-            Console.WriteLine(peg);
-
-            if (peg == null) {
-                return;
-            }
-
-            pegs[peg.Value] = false;
+            var pegs = StartNewGame();
 
             while (true) {
                 var jumps = GetPossibleJumps(pegs);
 
-                PrintPegs(pegs);
-                Console.WriteLine();
+                if (jumps.Length == 0) {
+                    var pegsRemaining = Array.FindAll(PegChars, p => pegs[p] == true).Length;
+
+                    Console.WriteLine($"Game Over. Pegs Remaining: {pegsRemaining}");
+
+                    if (!PlayAgain()) {
+                        return;
+                    }
+
+                    pegs = StartNewGame();
+                    jumps = GetPossibleJumps(pegs);
+                }
+
                 PrintJumps(jumps);
 
                 Console.WriteLine();
@@ -74,7 +66,41 @@ namespace peggame
                         }
                     }
                 }
+
+                PrintPegs(pegs);
             }
+        }
+
+        static Dictionary<char, bool> StartNewGame() {
+            var pegs = new Dictionary<char, bool>();
+
+            InitializePegs(pegs);
+            PrintPegs(pegs);
+            RemoveStartingPeg(pegs);
+            PrintPegs(pegs);
+
+            return pegs;
+        }
+
+        static void InitializePegs(Dictionary<char, bool> pegs) {
+            for (var i = 0; i < PegChars.Length; i++) {
+                pegs[PegChars[i]] = true;
+            }
+        }
+
+        static void RemoveStartingPeg(Dictionary<char, bool> pegs) {
+            Func<char, bool> HasPeg = (char selectedPeg) => pegs[selectedPeg];
+
+            Console.Write("Choose the peg to remove: ");
+
+            var peg = ReadPeg(HasPeg);
+            Console.WriteLine(peg);
+
+            if (peg == null) {
+                return;
+            }
+
+            pegs[peg.Value] = false;
         }
 
         static void PrintPegs(Dictionary<char, bool> pegs) {
@@ -84,6 +110,7 @@ namespace peggame
             Console.WriteLine("           {0} {1} {2}  ", ShowPeg(pegs, 3), ShowPeg(pegs, 4), ShowPeg(pegs, 5));
             Console.WriteLine("          {0} {1} {2} {3} ", ShowPeg(pegs, 6), ShowPeg(pegs, 7), ShowPeg(pegs, 8), ShowPeg(pegs, 9));
             Console.WriteLine("         {0} {1} {2} {3} {4}", ShowPeg(pegs, 10), ShowPeg(pegs, 11), ShowPeg(pegs, 12), ShowPeg(pegs, 13), ShowPeg(pegs, 14));
+            Console.WriteLine();
         }
 
         static void PrintJumps(Jump[] jumps) {
@@ -117,6 +144,26 @@ namespace peggame
                     return null;
                 }
             }
+        }
+
+        static bool PlayAgain() {
+            Console.Write("Play Again? [y/n] ");
+
+            while (true) {
+                var answer = Console.ReadKey(true);
+
+                if (answer.Key == ConsoleKey.Escape || Char.ToUpper(answer.KeyChar) == 'Y' || Char.ToUpper(answer.KeyChar) == 'N') {
+                    if (Char.ToUpper(answer.KeyChar) == 'Y') {
+                        Console.WriteLine('Y');
+                        return true;
+                    }
+
+                    Console.WriteLine('N');
+
+                    return false;
+                }
+            }
+
         }
 
         static bool CanJump(Jump[] jumps, char from, char? over = (char?)null) {
