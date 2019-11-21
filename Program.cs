@@ -3,6 +3,13 @@ using System.Collections.Generic;
 
 namespace peggame
 {
+    struct Jump
+    {
+        public char From;
+        public char To;
+        public char Over;
+    }
+
     class Program
     {
         static char[] PegChars = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'A', 'B', 'C', 'D', 'E'};
@@ -15,20 +22,53 @@ namespace peggame
                 pegs[PegChars[i]] = true;
             }
 
+            PrintPegs(pegs);
+
+            Console.WriteLine();
+            Console.Write("Choose the peg to remove: ");
+
+            var peg = ReadPeg(pegs);
+            Console.WriteLine(peg);
+
+            if (peg == null) {
+                return;
+            }
+
+            pegs[peg.Value] = false;
+
+            var jumps = GetPossibleJumps();
+
             while (true) {
                 PrintPegs(pegs);
 
                 Console.WriteLine();
-                Console.Write("Choose the peg to remove: ");
+                Console.Write("Choose where to jump from: ");
 
-                var peg = ReadPeg(pegs);
-                Console.WriteLine(peg);
+                var from = ReadPeg(pegs);
+                Console.WriteLine(from);
 
-                if (peg == null) {
+                if (from == null) {
                     return;
                 }
 
-                pegs[peg.Value] = false;
+                Console.Write("Choose where to jump over: ");
+
+                var over = ReadPeg(pegs);
+                Console.WriteLine(over);
+
+                if (over == null) {
+                    return;
+                }
+
+                foreach (var jump in jumps) {
+                    if (jump.From == from && jump.Over == over) {
+                        var to = jump.To;
+
+                        pegs[from.Value] = false;
+                        pegs[over.Value] = false;
+                        pegs[to] = true;
+                    }
+                }
             }
         }
 
@@ -63,6 +103,61 @@ namespace peggame
                     return null;
                 }
             }
+        }
+
+        static Jump[] GetPossibleJumps() {
+            return new Jump[] {
+                new Jump {From = '1', To = '4', Over = '2'},
+                new Jump {From = '1', To = '6', Over = '3'},
+
+                new Jump {From = '2', To = '7', Over = '4'},
+                new Jump {From = '2', To = '9', Over = '5'},
+
+                new Jump {From = '3', To = '8', Over = '5'},
+                new Jump {From = '3', To = '0', Over = '6'},
+
+                new Jump {From = '4', To = '1', Over = '2'},
+                new Jump {From = '4', To = '6', Over = '5'},
+                new Jump {From = '4', To = 'A', Over = '7'},
+                new Jump {From = '4', To = 'C', Over = '8'},
+
+                new Jump {From = '5', To = 'B', Over = '8'},
+                new Jump {From = '5', To = 'D', Over = '9'},
+
+                new Jump {From = '6', To = '1', Over = '3'},
+                new Jump {From = '6', To = '4', Over = '5'},
+                new Jump {From = '6', To = 'C', Over = '9'},
+                new Jump {From = '6', To = 'E', Over = '0'},
+
+                new Jump {From = '7', To = '2', Over = '4'},
+                new Jump {From = '7', To = '9', Over = '8'},
+
+                new Jump {From = '8', To = '3', Over = '5'},
+                new Jump {From = '8', To = '0', Over = '9'},
+
+                new Jump {From = '9', To = '2', Over = '5'},
+                new Jump {From = '9', To = '7', Over = '8'},
+
+                new Jump {From = '0', To = '3', Over = '6'},
+                new Jump {From = '0', To = '8', Over = '9'},
+
+                new Jump {From = 'A', To = '4', Over = '7'},
+                new Jump {From = 'A', To = 'C', Over = 'B'},
+
+                new Jump {From = 'B', To = '5', Over = '8'},
+                new Jump {From = 'B', To = 'D', Over = 'C'},
+
+                new Jump {From = 'C', To = '4', Over = '8'},
+                new Jump {From = 'C', To = '6', Over = '9'},
+                new Jump {From = 'C', To = 'A', Over = 'B'},
+                new Jump {From = 'C', To = 'E', Over = 'D'},
+
+                new Jump {From = 'D', To = '5', Over = '9'},
+                new Jump {From = 'D', To = 'B', Over = 'C'},
+
+                new Jump {From = 'E', To = '6', Over = '0'},
+                new Jump {From = 'E', To = 'C', Over = 'D'}
+            };
         }
     }
 }
