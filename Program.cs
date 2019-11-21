@@ -16,21 +16,17 @@ namespace peggame
 
         static void Main(string[] args)
         {
-            while (true) {
+            do {
                 var pegs = StartNewGame();
 
-                while (pegs != null) {
-                    var jumps = GetPossibleJumps(pegs);
+                if (pegs == null) {
+                    return;
+                }
 
+                var jumps = GetPossibleJumps(pegs);
+
+                do {
                     if (jumps.Length == 0) {
-                        var pegsRemaining = Array.FindAll(PegChars, p => pegs[p] == true).Length;
-
-                        Console.WriteLine($"Game Over. Pegs Remaining: {pegsRemaining}");
-
-                        if (!PlayAgain()) {
-                            return;
-                        }
-
                         break;
                     }
 
@@ -39,7 +35,7 @@ namespace peggame
                     var jump = GetNextJump(jumps);
 
                     if (jump == null) {
-                        return;
+                        break;
                     }
 
                     pegs[jump.Value.From] = false;
@@ -47,8 +43,14 @@ namespace peggame
                     pegs[jump.Value.To] = true;
 
                     PrintPegs(pegs);
+                    jumps = GetPossibleJumps(pegs);
                 }
+                while (jumps.Length > 0);
+
+                var pegsRemaining = Array.FindAll(PegChars, p => pegs[p] == true).Length;
+                Console.WriteLine($"Game Over. Pegs Remaining: {pegsRemaining}");
             }
+            while (PlayAgain());
         }
 
         static Dictionary<char, bool> StartNewGame() {
@@ -114,7 +116,7 @@ namespace peggame
                 }
             }
 
-            return null;
+            return GetNextJump(jumps);
         }
 
         static void PrintPegs(Dictionary<char, bool> pegs) {
