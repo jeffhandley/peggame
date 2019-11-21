@@ -36,36 +36,15 @@ namespace peggame
 
                 PrintJumps(jumps);
 
-                Console.WriteLine();
-                Console.Write("Choose where to jump from: ");
+                var jump = GetNextJump(jumps);
 
-                Func<char, bool> CanJumpFrom = (char selectedPeg) => CanJump(jumps, selectedPeg);
-
-                var from = ReadPeg(CanJumpFrom);
-                Console.WriteLine(from);
-
-                if (from == null) {
+                if (jump == null) {
                     return;
                 }
 
-                Console.Write("Choose where to jump over: ");
-
-                Func<char, bool> CanJumpTo = (char selectedPeg) => CanJump(jumps, from.Value, selectedPeg);
-
-                var over = ReadPeg(CanJumpTo);
-                Console.WriteLine(over);
-
-                if (over != null) {
-                    foreach (var jump in jumps) {
-                        if (jump.From == from && jump.Over == over) {
-                            var to = jump.To;
-
-                            pegs[from.Value] = false;
-                            pegs[over.Value] = false;
-                            pegs[to] = true;
-                        }
-                    }
-                }
+                pegs[jump.Value.From] = false;
+                pegs[jump.Value.Over] = false;
+                pegs[jump.Value.To] = true;
 
                 PrintPegs(pegs);
             }
@@ -103,6 +82,36 @@ namespace peggame
             pegs[peg.Value] = false;
         }
 
+        static Jump? GetNextJump(Jump[] jumps) {
+            Console.Write("Choose where to jump from: ");
+
+            Func<char, bool> CanJumpFrom = (char selectedPeg) => CanJump(jumps, selectedPeg);
+
+            var from = ReadPeg(CanJumpFrom);
+            Console.WriteLine(from);
+
+            if (from == null) {
+                return null;
+            }
+
+            Console.Write("Choose where to jump over: ");
+
+            Func<char, bool> CanJumpTo = (char selectedPeg) => CanJump(jumps, from.Value, selectedPeg);
+
+            var over = ReadPeg(CanJumpTo);
+            Console.WriteLine(over);
+
+            if (over != null) {
+                foreach (var jump in jumps) {
+                    if (jump.From == from && jump.Over == over) {
+                        return jump;
+                    }
+                }
+            }
+
+            return null;
+        }
+
         static void PrintPegs(Dictionary<char, bool> pegs) {
             Console.Clear();
             Console.WriteLine("             {0}    ", ShowPeg(pegs, 0));
@@ -120,6 +129,8 @@ namespace peggame
                 var jump = jumps[j];
                 Console.WriteLine($"  {j + 1}. From: {jump.From}; Over: {jump.Over}; To: {jump.To}");
             }
+
+            Console.WriteLine();
         }
 
         static char ShowPeg(Dictionary<char, bool> pegs, int index) {
