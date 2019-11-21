@@ -18,7 +18,7 @@ namespace peggame
         {
             var pegs = StartNewGame();
 
-            while (true) {
+            while (pegs != null) {
                 var jumps = GetPossibleJumps(pegs);
 
                 if (jumps.Length == 0) {
@@ -31,6 +31,11 @@ namespace peggame
                     }
 
                     pegs = StartNewGame();
+
+                    if (pegs == null) {
+                        break;
+                    }
+
                     jumps = GetPossibleJumps(pegs);
                 }
 
@@ -55,7 +60,15 @@ namespace peggame
 
             InitializePegs(pegs);
             PrintPegs(pegs);
-            RemoveStartingPeg(pegs);
+
+            var peg = RemoveStartingPeg(pegs);
+
+            if (peg == null) {
+                return null;
+            }
+
+            pegs[peg.Value] = false;
+
             PrintPegs(pegs);
 
             return pegs;
@@ -67,7 +80,7 @@ namespace peggame
             }
         }
 
-        static void RemoveStartingPeg(Dictionary<char, bool> pegs) {
+        static char? RemoveStartingPeg(Dictionary<char, bool> pegs) {
             Func<char, bool> HasPeg = (char selectedPeg) => pegs[selectedPeg];
 
             Console.Write("Choose the peg to remove: ");
@@ -75,11 +88,7 @@ namespace peggame
             var peg = ReadPeg(HasPeg);
             Console.WriteLine(peg);
 
-            if (peg == null) {
-                return;
-            }
-
-            pegs[peg.Value] = false;
+            return peg;
         }
 
         static Jump? GetNextJump(Jump[] jumps) {
