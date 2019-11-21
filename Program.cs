@@ -73,9 +73,9 @@ namespace peggame
         Jump? ChooseNextJump(Jump[] jumps);
     }
 
-    class GameModel : IGameModel
+    class InteractiveGameModel : IGameModel
     {
-        public char? ChooseStartingPeg(Dictionary<char, bool> pegs)
+        public virtual char? ChooseStartingPeg(Dictionary<char, bool> pegs)
         {
             Func<char, bool> HasPeg = (char selectedPeg) => pegs[selectedPeg];
 
@@ -87,7 +87,7 @@ namespace peggame
             return peg;
         }
 
-        public Jump? ChooseNextJump(Jump[] jumps)
+        public virtual Jump? ChooseNextJump(Jump[] jumps)
         {
             Console.Write("Choose where to jump from: ");
 
@@ -142,11 +142,24 @@ namespace peggame
         }
     }
 
+    class FirstChoiceGameModel : InteractiveGameModel
+    {
+        public override Jump? ChooseNextJump(Jump[] jumps)
+        {
+            var jump = jumps[0];
+
+            Console.WriteLine($"Jumping {jump.From} over {jump.Over}");
+            System.Threading.Thread.Sleep(1000);
+
+            return jump;
+        }
+    }
+
     class Program
     {
         static void Main(string[] args)
         {
-            IGameModel model = new GameModel();
+            IGameModel model = new FirstChoiceGameModel();
 
             do {
                 var pegs = new Dictionary<char, bool>();
