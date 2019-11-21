@@ -16,42 +16,38 @@ namespace peggame
 
         static void Main(string[] args)
         {
-            var pegs = StartNewGame();
+            while (true) {
+                var pegs = StartNewGame();
 
-            while (pegs != null) {
-                var jumps = GetPossibleJumps(pegs);
+                while (pegs != null) {
+                    var jumps = GetPossibleJumps(pegs);
 
-                if (jumps.Length == 0) {
-                    var pegsRemaining = Array.FindAll(PegChars, p => pegs[p] == true).Length;
+                    if (jumps.Length == 0) {
+                        var pegsRemaining = Array.FindAll(PegChars, p => pegs[p] == true).Length;
 
-                    Console.WriteLine($"Game Over. Pegs Remaining: {pegsRemaining}");
+                        Console.WriteLine($"Game Over. Pegs Remaining: {pegsRemaining}");
 
-                    if (!PlayAgain()) {
-                        return;
-                    }
+                        if (!PlayAgain()) {
+                            return;
+                        }
 
-                    pegs = StartNewGame();
-
-                    if (pegs == null) {
                         break;
                     }
 
-                    jumps = GetPossibleJumps(pegs);
+                    PrintJumps(jumps);
+
+                    var jump = GetNextJump(jumps);
+
+                    if (jump == null) {
+                        return;
+                    }
+
+                    pegs[jump.Value.From] = false;
+                    pegs[jump.Value.Over] = false;
+                    pegs[jump.Value.To] = true;
+
+                    PrintPegs(pegs);
                 }
-
-                PrintJumps(jumps);
-
-                var jump = GetNextJump(jumps);
-
-                if (jump == null) {
-                    return;
-                }
-
-                pegs[jump.Value.From] = false;
-                pegs[jump.Value.Over] = false;
-                pegs[jump.Value.To] = true;
-
-                PrintPegs(pegs);
             }
         }
 
