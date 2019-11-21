@@ -127,7 +127,7 @@ namespace peggame
 
             for (var j = 0; j < jumps.Length; j++) {
                 var jump = jumps[j];
-                Console.WriteLine($"  {j + 1}. From: {jump.From}; Over: {jump.Over}; To: {jump.To}");
+                Console.WriteLine($"  {j + 1}. Jump {jump.From} over {jump.Over}.");
             }
 
             Console.WriteLine();
