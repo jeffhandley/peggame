@@ -3,6 +3,63 @@ using System.Collections.Generic;
 
 namespace peggame
 {
+    class GameInterface
+    {
+        public static char[] PegChars = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'A', 'B', 'C', 'D', 'E'};
+
+        public static void PrintPegs(Dictionary<char, bool> pegs) {
+            Console.Clear();
+            Console.WriteLine("             {0}    ", ShowPeg(pegs, 0));
+            Console.WriteLine("            {0} {1}   ", ShowPeg(pegs, 1), ShowPeg(pegs, 2));
+            Console.WriteLine("           {0} {1} {2}  ", ShowPeg(pegs, 3), ShowPeg(pegs, 4), ShowPeg(pegs, 5));
+            Console.WriteLine("          {0} {1} {2} {3} ", ShowPeg(pegs, 6), ShowPeg(pegs, 7), ShowPeg(pegs, 8), ShowPeg(pegs, 9));
+            Console.WriteLine("         {0} {1} {2} {3} {4}", ShowPeg(pegs, 10), ShowPeg(pegs, 11), ShowPeg(pegs, 12), ShowPeg(pegs, 13), ShowPeg(pegs, 14));
+            Console.WriteLine();
+        }
+
+        public static void PrintJumps(Jump[] jumps) {
+            Console.WriteLine("Possible Jumps:");
+
+            for (var j = 0; j < jumps.Length; j++) {
+                var jump = jumps[j];
+                Console.WriteLine($"  {j + 1}. Jump {jump.From} over {jump.Over}.");
+            }
+
+            Console.WriteLine();
+        }
+
+        static char ShowPeg(Dictionary<char, bool> pegs, int index) {
+            char pegChar = GameInterface.PegChars[index];
+            bool hasPeg = pegs[pegChar];
+
+            if (hasPeg) {
+                return pegChar;
+            }
+
+            return '∘';
+        }
+
+        public static bool PlayAgain() {
+            Console.Write("Play Again? [y/n] ");
+
+            while (true) {
+                var answer = Console.ReadKey(true);
+
+                if (answer.Key == ConsoleKey.Escape || Char.ToUpper(answer.KeyChar) == 'Y' || Char.ToUpper(answer.KeyChar) == 'N') {
+                    if (Char.ToUpper(answer.KeyChar) == 'Y') {
+                        Console.WriteLine('Y');
+                        return true;
+                    }
+
+                    Console.WriteLine('N');
+
+                    return false;
+                }
+            }
+
+        }
+    }
+
     struct Jump
     {
         public char From;
@@ -10,75 +67,16 @@ namespace peggame
         public char Over;
     }
 
-    class Program
+    interface IGameModel
     {
-        static char[] PegChars = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'A', 'B', 'C', 'D', 'E'};
+        char? ChooseStartingPeg(Dictionary<char, bool> pegs);
+        Jump? ChooseNextJump(Jump[] jumps);
+    }
 
-        static void Main(string[] args)
+    class GameModel : IGameModel
+    {
+        public char? ChooseStartingPeg(Dictionary<char, bool> pegs)
         {
-            do {
-                var pegs = StartNewGame();
-
-                if (pegs == null) {
-                    return;
-                }
-
-                var jumps = GetPossibleJumps(pegs);
-
-                do {
-                    if (jumps.Length == 0) {
-                        break;
-                    }
-
-                    PrintJumps(jumps);
-
-                    var jump = GetNextJump(jumps);
-
-                    if (jump == null) {
-                        break;
-                    }
-
-                    pegs[jump.Value.From] = false;
-                    pegs[jump.Value.Over] = false;
-                    pegs[jump.Value.To] = true;
-
-                    PrintPegs(pegs);
-                    jumps = GetPossibleJumps(pegs);
-                }
-                while (jumps.Length > 0);
-
-                var pegsRemaining = Array.FindAll(PegChars, p => pegs[p] == true).Length;
-                Console.WriteLine($"Game Over. Pegs Remaining: {pegsRemaining}");
-            }
-            while (PlayAgain());
-        }
-
-        static Dictionary<char, bool> StartNewGame() {
-            var pegs = new Dictionary<char, bool>();
-
-            InitializePegs(pegs);
-            PrintPegs(pegs);
-
-            var peg = RemoveStartingPeg(pegs);
-
-            if (peg == null) {
-                return null;
-            }
-
-            pegs[peg.Value] = false;
-
-            PrintPegs(pegs);
-
-            return pegs;
-        }
-
-        static void InitializePegs(Dictionary<char, bool> pegs) {
-            for (var i = 0; i < PegChars.Length; i++) {
-                pegs[PegChars[i]] = true;
-            }
-        }
-
-        static char? RemoveStartingPeg(Dictionary<char, bool> pegs) {
             Func<char, bool> HasPeg = (char selectedPeg) => pegs[selectedPeg];
 
             Console.Write("Choose the peg to remove: ");
@@ -89,7 +87,8 @@ namespace peggame
             return peg;
         }
 
-        static Jump? GetNextJump(Jump[] jumps) {
+        public Jump? ChooseNextJump(Jump[] jumps)
+        {
             Console.Write("Choose where to jump from: ");
 
             Func<char, bool> CanJumpFrom = (char selectedPeg) => CanJump(jumps, selectedPeg);
@@ -116,72 +115,7 @@ namespace peggame
                 }
             }
 
-            return GetNextJump(jumps);
-        }
-
-        static void PrintPegs(Dictionary<char, bool> pegs) {
-            Console.Clear();
-            Console.WriteLine("             {0}    ", ShowPeg(pegs, 0));
-            Console.WriteLine("            {0} {1}   ", ShowPeg(pegs, 1), ShowPeg(pegs, 2));
-            Console.WriteLine("           {0} {1} {2}  ", ShowPeg(pegs, 3), ShowPeg(pegs, 4), ShowPeg(pegs, 5));
-            Console.WriteLine("          {0} {1} {2} {3} ", ShowPeg(pegs, 6), ShowPeg(pegs, 7), ShowPeg(pegs, 8), ShowPeg(pegs, 9));
-            Console.WriteLine("         {0} {1} {2} {3} {4}", ShowPeg(pegs, 10), ShowPeg(pegs, 11), ShowPeg(pegs, 12), ShowPeg(pegs, 13), ShowPeg(pegs, 14));
-            Console.WriteLine();
-        }
-
-        static void PrintJumps(Jump[] jumps) {
-            Console.WriteLine("Possible Jumps:");
-
-            for (var j = 0; j < jumps.Length; j++) {
-                var jump = jumps[j];
-                Console.WriteLine($"  {j + 1}. Jump {jump.From} over {jump.Over}.");
-            }
-
-            Console.WriteLine();
-        }
-
-        static char ShowPeg(Dictionary<char, bool> pegs, int index) {
-            char pegChar = PegChars[index];
-            bool hasPeg = pegs[pegChar];
-
-            if (hasPeg) {
-                return pegChar;
-            }
-
-            return '∘';
-        }
-
-        static char? ReadPeg(Func<char, bool> isAllowed) {
-            while (true) {
-                var key = Console.ReadKey(true);
-                var keyChar = Char.ToUpper(key.KeyChar);
-
-                if (Array.IndexOf(PegChars, keyChar) > -1 && isAllowed(keyChar) == true) {
-                    return keyChar;
-                } else if (key.Key == ConsoleKey.Escape) {
-                    return null;
-                }
-            }
-        }
-
-        static bool PlayAgain() {
-            Console.Write("Play Again? [y/n] ");
-
-            while (true) {
-                var answer = Console.ReadKey(true);
-
-                if (answer.Key == ConsoleKey.Escape || Char.ToUpper(answer.KeyChar) == 'Y' || Char.ToUpper(answer.KeyChar) == 'N') {
-                    if (Char.ToUpper(answer.KeyChar) == 'Y') {
-                        Console.WriteLine('Y');
-                        return true;
-                    }
-
-                    Console.WriteLine('N');
-
-                    return false;
-                }
-            }
-
+            return ChooseNextJump(jumps);
         }
 
         static bool CanJump(Jump[] jumps, char from, char? over = (char?)null) {
@@ -192,6 +126,77 @@ namespace peggame
             }
 
             return false;
+        }
+
+        static char? ReadPeg(Func<char, bool> isAllowed) {
+            while (true) {
+                var key = Console.ReadKey(true);
+                var keyChar = Char.ToUpper(key.KeyChar);
+
+                if (Array.IndexOf(GameInterface.PegChars, keyChar) > -1 && isAllowed(keyChar) == true) {
+                    return keyChar;
+                } else if (key.Key == ConsoleKey.Escape) {
+                    return null;
+                }
+            }
+        }
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            IGameModel model = new GameModel();
+
+            do {
+                var pegs = new Dictionary<char, bool>();
+
+                InitializePegs(pegs);
+                GameInterface.PrintPegs(pegs);
+
+                var peg = model.ChooseStartingPeg(pegs);
+
+                if (peg == null) {
+                    return;
+                }
+
+                pegs[peg.Value] = false;
+
+                GameInterface.PrintPegs(pegs);
+
+                var jumps = GetPossibleJumps(pegs);
+
+                do {
+                    GameInterface.PrintJumps(jumps);
+
+                    var jump = model.ChooseNextJump(jumps);
+
+                    if (jump == null) {
+                        break;
+                    }
+
+                    pegs[jump.Value.From] = false;
+                    pegs[jump.Value.Over] = false;
+                    pegs[jump.Value.To] = true;
+
+                    GameInterface.PrintPegs(pegs);
+
+                    jumps = GetPossibleJumps(pegs);
+                }
+                while (jumps.Length > 0);
+
+                var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true).Length;
+
+                Console.WriteLine();
+                Console.WriteLine($"Game Over. Pegs Remaining: {pegsRemaining}");
+            }
+            while (GameInterface.PlayAgain());
+        }
+
+        static void InitializePegs(Dictionary<char, bool> pegs) {
+            for (var i = 0; i < GameInterface.PegChars.Length; i++) {
+                pegs[GameInterface.PegChars[i]] = true;
+            }
         }
 
         static Jump[] GetPossibleJumps(Dictionary<char, bool> pegs) {
