@@ -17,6 +17,7 @@ namespace peggame
         static void Main(string[] args)
         {
             var pegs = new Dictionary<char, bool>();
+            Func<char, bool> HasPeg = (char selectedPeg) => pegs[selectedPeg];
 
             for (var i = 0; i < PegChars.Length; i++) {
                 pegs[PegChars[i]] = true;
@@ -27,7 +28,7 @@ namespace peggame
             Console.WriteLine();
             Console.Write("Choose the peg to remove: ");
 
-            var peg = ReadPeg(pegs);
+            var peg = ReadPeg(HasPeg);
             Console.WriteLine(peg);
 
             if (peg == null) {
@@ -44,7 +45,7 @@ namespace peggame
                 Console.WriteLine();
                 Console.Write("Choose where to jump from: ");
 
-                var from = ReadPeg(pegs);
+                var from = ReadPeg(HasPeg);
                 Console.WriteLine(from);
 
                 if (from == null) {
@@ -53,7 +54,7 @@ namespace peggame
 
                 Console.Write("Choose where to jump over: ");
 
-                var over = ReadPeg(pegs);
+                var over = ReadPeg(HasPeg);
                 Console.WriteLine(over);
 
                 if (over == null) {
@@ -92,12 +93,12 @@ namespace peggame
             return '∘';
         }
 
-        static char? ReadPeg(Dictionary<char, bool> pegs) {
+        static char? ReadPeg(Func<char, bool> isAllowed) {
             while (true) {
                 var key = Console.ReadKey(true);
                 var keyChar = Char.ToUpper(key.KeyChar);
 
-                if (Array.IndexOf(PegChars, keyChar) > -1 && pegs[keyChar] == true) {
+                if (Array.IndexOf(PegChars, keyChar) > -1 && isAllowed(keyChar) == true) {
                     return keyChar;
                 } else if (key.Key == ConsoleKey.Escape) {
                     return null;
