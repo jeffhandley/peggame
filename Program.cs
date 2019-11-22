@@ -71,6 +71,7 @@ namespace peggame
     {
         char? ChooseStartingPeg(Dictionary<char, bool> pegs);
         Jump? ChooseNextJump(Jump[] jumps);
+        void GameOver(Dictionary<char, bool> pegs);
     }
 
     class InteractiveGameModel : IGameModel
@@ -118,6 +119,13 @@ namespace peggame
             return ChooseNextJump(jumps);
         }
 
+        public virtual void GameOver(Dictionary<char, bool> pegs) {
+            var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true).Length;
+
+            Console.WriteLine();
+            Console.WriteLine($"Game Over. Pegs Remaining: {pegsRemaining}");
+        }
+
         static bool CanJump(Jump[] jumps, char from, char? over = (char?)null) {
             foreach (var jump in jumps) {
                 if (jump.From == from && (over == null || jump.Over == over.Value)) {
@@ -155,11 +163,151 @@ namespace peggame
         }
     }
 
+    class LastChoiceGameModel : InteractiveGameModel
+    {
+        private Dictionary<char, List<Tuple<List<Tuple<Jump, int>>, int>>> history;
+        private int? nextStartingPeg = 0;
+        private char? startingPeg;
+        private List<Tuple<Jump, int>> currentPath;
+        private List<Tuple<Jump, int>> lastPath;
+
+        public LastChoiceGameModel()
+        {
+            history = new Dictionary<char, List<Tuple<List<Tuple<Jump, int>>, int>>>();
+        }
+
+        public override char? ChooseStartingPeg(Dictionary<char, bool> pegs)
+        {
+            startingPeg = nextStartingPeg.HasValue ? GameInterface.PegChars[nextStartingPeg.Value] : (char?)null;
+
+            if (startingPeg.HasValue) {
+                currentPath = new List<Tuple<Jump, int>>();
+
+                if (history.ContainsKey(startingPeg.Value)) {
+                    var paths = history[startingPeg.Value];
+                    lastPath = paths.Count > 0 ? paths[paths.Count - 1].Item1 : (List<Tuple<Jump, int>>)null;
+                }
+            } else {
+                currentPath = (List<Tuple<Jump, int>>)null;
+                lastPath = (List<Tuple<Jump, int>>)null;
+            }
+
+            return startingPeg;
+        }
+
+        public override Jump? ChooseNextJump(Jump[] jumps)
+        {
+            Tuple<Jump, int> thisJump;
+
+            if (lastPath != null) {
+                Console.WriteLine("Last Path:");
+
+                foreach (var lastPathJump in lastPath) {
+                    Console.WriteLine($"Jumped {lastPathJump.Item1.From} over {lastPathJump.Item1.Over}. Jump index: {lastPathJump.Item2}.");
+                }
+            }
+
+            // If the last path got as far as our previous jump
+            if (lastPath != null && lastPath.Count > currentPath.Count - 1) {
+                Jump? lastPathPreviousJump = currentPath.Count > 0 ? lastPath[currentPath.Count - 1].Item1 : (Jump?)null;
+                Jump? currentPathPreviousJump = currentPath.Count > 0 ? currentPath[currentPath.Count - 1].Item1 : (Jump?)null;
+
+                // And if the last path's previous jump was the
+                // same as our previous jump, then we need to decide
+                // what to do on this jump based on the last path
+                if (currentPathPreviousJump.HasValue && lastPathPreviousJump.Value.From == currentPathPreviousJump.Value.From && lastPathPreviousJump.Value.Over == currentPathPreviousJump.Value.Over) {
+                    // The previous jumps were the same (or this is the first jump)
+                    // Now we need to look ahead at the next jump to determine if
+                    // this jump should be the same
+                    var lastPathThisJumpIndex = lastPath[currentPath.Count].Item2;
+
+                    if (lastPath.Count > currentPath.Count + 1) {
+                        var lastPathNextJumpIndex = lastPath[currentPath.Count + 1].Item2;
+
+                        if (lastPathNextJumpIndex > 0) {
+                            // There are remaining jumps to decrement on the next
+                            // jump, so we will keep this jump the same
+                            thisJump = new Tuple<Jump, int>(jumps[lastPathThisJumpIndex], lastPathThisJumpIndex);
+                        } else {
+                            // There are no remaining jumps to decrement on the next
+                            // jump, so we need to decrement this one if possible
+
+                            if (lastPathThisJumpIndex > 0) {
+                                thisJump = new Tuple<Jump, int>(jumps[lastPathThisJumpIndex - 1], lastPathThisJumpIndex - 1);
+                            } else {
+                                throw new Exception("Cannot decrement this jump");
+                            }
+                        }
+                    } else {
+                        // The previous jumps were the same, but there is
+                        // no future jump in the last path, so this was
+                        // the last jump in that path. We will try to
+                        // decrement this jump.
+                        if (lastPathThisJumpIndex > 0) {
+                            thisJump = new Tuple<Jump, int>(jumps[lastPathThisJumpIndex - 1], lastPathThisJumpIndex - 1);
+                        } else {
+                            throw new Exception("Cannot decrement this jump; there is no future jump");
+                        }
+                    }
+                } else {
+                    // The previous jumps were different
+                    // We will choose the last option for this jump
+                    thisJump = new Tuple<Jump, int>(jumps[jumps.Length - 1], jumps.Length - 1);
+                }
+            } else {
+                // The last path didn't get as far as we have gotten
+                // We will choose the last option for this jump
+                thisJump = new Tuple<Jump, int>(jumps[jumps.Length - 1], jumps.Length - 1);
+            }
+
+            Console.WriteLine("This Path:");
+
+            foreach (var currentPathJump in currentPath) {
+                Console.WriteLine($"Jumped {currentPathJump.Item1.From} over {currentPathJump.Item1.Over}");
+            }
+
+            currentPath.Add(thisJump);
+            var jump = thisJump.Item1;
+
+            Console.WriteLine($"Jumping {jump.From} over {jump.Over}.");
+            System.Threading.Thread.Sleep(100);
+
+            return jump;
+        }
+
+        public override void GameOver(Dictionary<char, bool> pegs) {
+            var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true).Length;
+
+            history.TryAdd(startingPeg.Value, new List<Tuple<List<Tuple<Jump, int>>, int>>());
+            history[startingPeg.Value].Add(new Tuple<List<Tuple<Jump, int>>, int>(currentPath, pegsRemaining));
+
+            Console.WriteLine();
+            Console.WriteLine($"Game Over. Pegs Remaining: {pegsRemaining}");
+
+            Console.WriteLine();
+            Console.WriteLine($"Starting Peg: {startingPeg}. Attempt: {history[startingPeg.Value].Count}.");
+
+            bool hasMoreMoves = false;
+
+            foreach (var jump in history[startingPeg.Value][history[startingPeg.Value].Count - 1].Item1) {
+                Console.WriteLine($"Jumped {jump.Item1.From} over {jump.Item1.Over}. Jump index: {jump.Item2}.");
+
+                if (jump.Item2 > 0) {
+                    hasMoreMoves = true;
+                }
+            }
+
+            if (!hasMoreMoves) {
+                nextStartingPeg++;
+            }
+        }
+    }
+
     class Program
     {
         static void Main(string[] args)
         {
-            IGameModel model = new FirstChoiceGameModel();
+            IGameModel model = new LastChoiceGameModel();
 
             do {
                 var pegs = new Dictionary<char, bool>();
@@ -198,10 +346,7 @@ namespace peggame
                 }
                 while (jumps.Length > 0);
 
-                var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true).Length;
-
-                Console.WriteLine();
-                Console.WriteLine($"Game Over. Pegs Remaining: {pegsRemaining}");
+                model.GameOver(pegs);
             }
             while (GameInterface.PlayAgain());
         }
