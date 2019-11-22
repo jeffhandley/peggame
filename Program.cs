@@ -184,17 +184,32 @@ namespace peggame
 
     class LastChoiceGameModel : InteractiveGameModel
     {
-        private Dictionary<char, List<Tuple<List<Tuple<Jump, int>>, int>>> history;
-        private int nextStartingPeg = 0;
-        private char? startingPeg;
-        private List<Tuple<Jump, int>> currentPath;
-        private List<Tuple<Jump, int>> lastPath;
-        private List<List<Tuple<Jump, int>>> wins;
+        protected Dictionary<char, List<Tuple<List<Tuple<Jump, int>>, int>>> history;
+        protected int nextStartingPeg = 0;
+        protected char? startingPeg;
+        protected List<Tuple<Jump, int>> currentPath;
+        protected List<Tuple<Jump, int>> lastPath;
+        protected Dictionary<char, List<List<Tuple<Jump, int>>>> wins;
+        private int? maxAttemptsPerPeg;
 
         public LastChoiceGameModel()
         {
             history = new Dictionary<char, List<Tuple<List<Tuple<Jump, int>>, int>>>();
-            wins = new List<List<Tuple<Jump, int>>>();
+            wins = new Dictionary<char, List<List<Tuple<Jump, int>>>>();
+        }
+
+        public LastChoiceGameModel(string[] args) : this()
+        {
+            var maxArg = Array.IndexOf(args, "-m");
+
+            if (maxArg >= 0 && args.Length > maxArg + 1) {
+                int maxAttempts = 0;
+                int.TryParse(args[maxArg + 1], out maxAttempts);
+
+                if (maxAttempts > 0) {
+                    maxAttemptsPerPeg = maxAttempts;
+                }
+            }
         }
 
         public override char? ChooseStartingPeg(Dictionary<char, bool> pegs)
@@ -202,6 +217,7 @@ namespace peggame
             startingPeg = nextStartingPeg < GameInterface.PegChars.Length ? GameInterface.PegChars[nextStartingPeg] : (char?)null;
 
             if (startingPeg.HasValue) {
+                wins.TryAdd(startingPeg.Value, new List<List<Tuple<Jump, int>>>());
                 currentPath = new List<Tuple<Jump, int>>();
 
                 if (history.ContainsKey(startingPeg.Value)) {
@@ -277,52 +293,46 @@ namespace peggame
             history.TryAdd(startingPeg.Value, new List<Tuple<List<Tuple<Jump, int>>, int>>());
             history[startingPeg.Value].Add(new Tuple<List<Tuple<Jump, int>>, int>(currentPath, pegsRemaining));
 
-            Console.WriteLine();
-            Console.WriteLine($"Game Over. Pegs Remaining: {pegsRemaining}");
+            if (pegsRemaining == 1) {
+                wins[startingPeg.Value].Add(currentPath);
 
-            Console.WriteLine();
-            Console.WriteLine($"Starting Peg: {startingPeg}. Attempt: {history[startingPeg.Value].Count.ToString("N0")}. Wins: {wins.Count.ToString("N0")}.");
+                Console.WriteLine("Game won!");
+            }
+
+            PrintStats();
 
             bool hasMoreMoves = false;
 
             foreach (var jump in history[startingPeg.Value][history[startingPeg.Value].Count - 1].Item1) {
-                Console.WriteLine($"Jumped {jump.Item1.From} over {jump.Item1.Over}. Jump index: {jump.Item2}.");
-
                 if (jump.Item2 > 0) {
                     hasMoreMoves = true;
                 }
             }
 
-            if (!hasMoreMoves) {
+            if (!hasMoreMoves || (maxAttemptsPerPeg.HasValue && history[startingPeg.Value].Count >= maxAttemptsPerPeg.Value)) {
                 nextStartingPeg++;
-            }
-
-            if (pegsRemaining == 1) {
-                wins.Add(currentPath);
-                Console.WriteLine($"Game won! Wins: {wins.Count}");
             }
 
             return GameInterface.PegChars.Length > nextStartingPeg;
         }
 
         public override void PrintStats() {
-            var attempts = 1;
-
-            if (history.ContainsKey(startingPeg.Value)) {
-                attempts = history[startingPeg.Value].Count + 1;
-            }
-
-            Console.WriteLine($"Starting Peg: {startingPeg}. Attempt: {attempts.ToString("N0")}. Wins: {wins.Count.ToString("N0")}.");
             Console.WriteLine();
-            Console.WriteLine("Last Path:".PadRight(40) + "This Path:");
+            Console.WriteLine("Last Path:".PadRight(35) + "This Path:");
 
-            var pathLength = Math.Max(lastPath != null ? lastPath.Count : 0, currentPath.Count);
+            var pathLength = Math.Max(Math.Max(lastPath != null ? lastPath.Count : 0, currentPath.Count), history.Keys.Count);
+            var pegStats = new List<string>();
+
+            foreach (var peg in history.Keys) {
+                pegStats.Add($"Starting Peg: {peg}. Attempts: {history[peg].Count.ToString("N0")}. Wins: {wins[peg].Count.ToString("N0")} ({((decimal)wins[peg].Count / (decimal)history[peg].Count).ToString("P2")}).");
+            }
 
             for (var i = 0; i < pathLength; i++) {
                 var lastJump = lastPath != null && lastPath.Count > i ? $"Jumped {lastPath[i].Item1.From} over {lastPath[i].Item1.Over}. Jump index: {lastPath[i].Item2}." : "";
                 var currentJump = currentPath.Count > i ? $"Jumped {currentPath[i].Item1.From} over {currentPath[i].Item1.Over}. Jump index: {currentPath[i].Item2}." : "";
+                var pegStat = pegStats.Count > i ? pegStats[i] : "";
 
-                Console.WriteLine(lastJump.PadRight(40) + currentJump);
+                Console.WriteLine(lastJump.PadRight(35) + currentJump.PadRight(35) + pegStat);
             }
 
             Console.WriteLine();
@@ -343,11 +353,52 @@ namespace peggame
         }
     }
 
+    class FindFirstWinGameModel : LastChoiceGameModel
+    {
+        public override bool PlayAgain(Dictionary<char, bool> pegs) {
+            var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true).Length;
+
+            history.TryAdd(startingPeg.Value, new List<Tuple<List<Tuple<Jump, int>>, int>>());
+            history[startingPeg.Value].Add(new Tuple<List<Tuple<Jump, int>>, int>(currentPath, pegsRemaining));
+
+            if (pegsRemaining == 1) {
+                wins[startingPeg.Value].Add(currentPath);
+
+                Console.WriteLine("Game won!");
+            }
+
+            PrintStats();
+
+            bool hasMoreMoves = false;
+
+            foreach (var jump in history[startingPeg.Value][history[startingPeg.Value].Count - 1].Item1) {
+                if (jump.Item2 > 0) {
+                    hasMoreMoves = true;
+                }
+            }
+
+            if (!hasMoreMoves || wins[startingPeg.Value].Count >= 1) {
+                nextStartingPeg++;
+            }
+
+            return GameInterface.PegChars.Length > nextStartingPeg;
+        }
+    }
+
     class Program
     {
         static void Main(string[] args)
         {
-            IGameModel model = new LastChoiceGameModel();
+            IGameModel model;
+
+            if (Array.IndexOf(args, "-a") >= 0) {
+                model = new LastChoiceGameModel(args);
+            } else if (Array.IndexOf(args, "-1") >= 0) {
+                model = new FindFirstWinGameModel();
+            } else {
+                model = new InteractiveGameModel();
+            }
+
             Dictionary<char, bool> pegs;
 
             do {
@@ -371,6 +422,16 @@ namespace peggame
                 do {
                     model.PrintStats();
                     GameInterface.PrintJumps(jumps);
+
+                    if (Console.KeyAvailable == true) {
+                        Console.WriteLine("Game paused. Press a key to continue.");
+
+                        while (Console.KeyAvailable) {
+                            Console.ReadKey(true);
+                        }
+
+                        Console.ReadKey(true);
+                    }
 
                     var jump = model.ChooseNextJump(jumps);
 
