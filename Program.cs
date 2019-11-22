@@ -381,7 +381,24 @@ namespace peggame
                 nextStartingPeg++;
             }
 
-            return GameInterface.PegChars.Length > nextStartingPeg;
+            if (GameInterface.PegChars.Length > nextStartingPeg) {
+                return true;
+            }
+
+            Console.WriteLine("Wins:");
+
+            foreach (var peg in wins.Keys) {
+                Console.WriteLine($"Starting Peg: {peg}");
+                Console.WriteLine();
+
+                foreach (var jump in wins[peg][0]) {
+                    Console.WriteLine($"Jumped {jump.Item1.From} over {jump.Item1.Over}.");
+                }
+
+                Console.WriteLine();
+            }
+
+            return false;
         }
     }
 
