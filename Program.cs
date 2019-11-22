@@ -184,18 +184,18 @@ namespace peggame
 
     class LastChoiceGameModel : InteractiveGameModel
     {
-        protected Dictionary<char, List<Tuple<List<Tuple<Jump, int>>, int>>> history;
+        protected Dictionary<char, List<Tuple<List<History.JumpRecord>, int>>> history;
         protected int nextStartingPeg = 0;
         protected char? startingPeg;
-        protected List<Tuple<Jump, int>> currentPath;
-        protected List<Tuple<Jump, int>> lastPath;
-        protected Dictionary<char, List<List<Tuple<Jump, int>>>> wins;
+        protected List<History.JumpRecord> currentPath;
+        protected List<History.JumpRecord> lastPath;
+        protected Dictionary<char, List<List<History.JumpRecord>>> wins;
         private int? maxAttemptsPerPeg;
 
         public LastChoiceGameModel()
         {
-            history = new Dictionary<char, List<Tuple<List<Tuple<Jump, int>>, int>>>();
-            wins = new Dictionary<char, List<List<Tuple<Jump, int>>>>();
+            history = new Dictionary<char, List<Tuple<List<History.JumpRecord>, int>>>();
+            wins = new Dictionary<char, List<List<History.JumpRecord>>>();
         }
 
         public LastChoiceGameModel(string[] args) : this()
@@ -217,16 +217,16 @@ namespace peggame
             startingPeg = nextStartingPeg < GameInterface.PegChars.Length ? GameInterface.PegChars[nextStartingPeg] : (char?)null;
 
             if (startingPeg.HasValue) {
-                wins.TryAdd(startingPeg.Value, new List<List<Tuple<Jump, int>>>());
-                currentPath = new List<Tuple<Jump, int>>();
+                wins.TryAdd(startingPeg.Value, new List<List<History.JumpRecord>>());
+                currentPath = new List<History.JumpRecord>();
 
                 if (history.ContainsKey(startingPeg.Value)) {
                     var paths = history[startingPeg.Value];
-                    lastPath = paths.Count > 0 ? paths[paths.Count - 1].Item1 : (List<Tuple<Jump, int>>)null;
+                    lastPath = paths.Count > 0 ? paths[paths.Count - 1].Item1 : (List<History.JumpRecord>)null;
                 }
             } else {
-                currentPath = (List<Tuple<Jump, int>>)null;
-                lastPath = (List<Tuple<Jump, int>>)null;
+                currentPath = (List<History.JumpRecord>)null;
+                lastPath = (List<History.JumpRecord>)null;
             }
 
             return startingPeg;
@@ -234,7 +234,7 @@ namespace peggame
 
         public override Jump? ChooseNextJump(Jump[] jumps)
         {
-            Tuple<Jump, int> thisJump;
+            History.JumpRecord thisJump;
 
             // If the last path got as far as our previous jump
             if (lastPath != null && lastPath.Count > currentPath.Count - 1) {
@@ -244,11 +244,11 @@ namespace peggame
                     // The previous jumps were the same (or this is the first jump)
                     // Now we need to look ahead at the next jump to determine if
                     // this jump should be the same
-                    var lastPathThisJumpIndex = lastPath[currentPath.Count].Item2;
+                    var lastPathThisJumpIndex = lastPath[currentPath.Count].JumpIndex;
                     var hasRemainingDecrements = false;
 
                     for (var i = currentPath.Count + 1; i < lastPath.Count; i++) {
-                        if (lastPath[i].Item2 > 0) {
+                        if (lastPath[i].JumpIndex > 0) {
                             hasRemainingDecrements = true;
                             break;
                         }
@@ -257,13 +257,13 @@ namespace peggame
                     if (hasRemainingDecrements == true) {
                         // There are remaining jumps to decrement,
                         // so we will keep this jump the same
-                        thisJump = new Tuple<Jump, int>(jumps[lastPathThisJumpIndex], lastPathThisJumpIndex);
+                        thisJump = new History.JumpRecord(jumps[lastPathThisJumpIndex], lastPathThisJumpIndex);
                     } else {
                         // There are no remaining jumps to decrement,
                         // so we need to decrement this one if possible
 
                         if (lastPathThisJumpIndex > 0) {
-                            thisJump = new Tuple<Jump, int>(jumps[lastPathThisJumpIndex - 1], lastPathThisJumpIndex - 1);
+                            thisJump = new History.JumpRecord(jumps[lastPathThisJumpIndex - 1], lastPathThisJumpIndex - 1);
                         } else {
                             throw new Exception($"Cannot decrement this jump. Jump number: {currentPath.Count}. Has remaining decrements: {hasRemainingDecrements}.");
                         }
@@ -271,27 +271,26 @@ namespace peggame
                 } else {
                     // The previous jumps were different
                     // We will choose the last option for this jump
-                    thisJump = new Tuple<Jump, int>(jumps[jumps.Length - 1], jumps.Length - 1);
+                    thisJump = new History.JumpRecord(jumps[jumps.Length - 1], jumps.Length - 1);
                 }
             } else {
                 // The last path didn't get as far as we have gotten
                 // We will choose the last option for this jump
-                thisJump = new Tuple<Jump, int>(jumps[jumps.Length - 1], jumps.Length - 1);
+                thisJump = new History.JumpRecord(jumps[jumps.Length - 1], jumps.Length - 1);
             }
 
             currentPath.Add(thisJump);
-            var jump = thisJump.Item1;
 
-            Console.WriteLine($"Jumping {jump.From} over {jump.Over}.");
+            Console.WriteLine($"Jumping {thisJump.From} over {thisJump.Over}.");
 
-            return jump;
+            return thisJump.Jump;
         }
 
         public override bool PlayAgain(Dictionary<char, bool> pegs) {
             var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true).Length;
 
-            history.TryAdd(startingPeg.Value, new List<Tuple<List<Tuple<Jump, int>>, int>>());
-            history[startingPeg.Value].Add(new Tuple<List<Tuple<Jump, int>>, int>(currentPath, pegsRemaining));
+            history.TryAdd(startingPeg.Value, new List<Tuple<List<History.JumpRecord>, int>>());
+            history[startingPeg.Value].Add(new Tuple<List<History.JumpRecord>, int>(currentPath, pegsRemaining));
 
             if (pegsRemaining == 1) {
                 wins[startingPeg.Value].Add(currentPath);
@@ -304,7 +303,7 @@ namespace peggame
             bool hasMoreMoves = false;
 
             foreach (var jump in history[startingPeg.Value][history[startingPeg.Value].Count - 1].Item1) {
-                if (jump.Item2 > 0) {
+                if (jump.JumpIndex > 0) {
                     hasMoreMoves = true;
                 }
             }
@@ -329,8 +328,8 @@ namespace peggame
             }
 
             for (var i = 0; i < pathLength; i++) {
-                var lastJump = lastPath != null && lastPath.Count > i ? $"Jumped {lastPath[i].Item1.From} over {lastPath[i].Item1.Over}. Jump index: {lastPath[i].Item2}." : "";
-                var currentJump = currentPath.Count > i ? $"Jumped {currentPath[i].Item1.From} over {currentPath[i].Item1.Over}. Jump index: {currentPath[i].Item2}." : "";
+                var lastJump = lastPath != null && lastPath.Count > i ? $"Jumped {lastPath[i].From} over {lastPath[i].Over}. Jump index: {lastPath[i].JumpIndex}." : "";
+                var currentJump = currentPath.Count > i ? $"Jumped {currentPath[i].From} over {currentPath[i].Over}. Jump index: {currentPath[i].JumpIndex}." : "";
                 var pegStat = pegStats.Count > i ? pegStats[i] : "";
 
                 Console.WriteLine(lastJump.PadRight(35) + currentJump.PadRight(35) + pegStat);
@@ -339,13 +338,13 @@ namespace peggame
             Console.WriteLine();
         }
 
-        static bool PathsEqual(List<Tuple<Jump, int>> pastPath, List<Tuple<Jump, int>> currentPath) {
+        static bool PathsEqual(List<History.JumpRecord> pastPath, List<History.JumpRecord> currentPath) {
             if (pastPath.Count < currentPath.Count) {
                 return false;
             }
 
             for (var j = 0; j < currentPath.Count; j++) {
-                if (!currentPath[j].Item1.Equals(pastPath[j].Item1)) {
+                if (!currentPath[j].Jump.Equals(pastPath[j].Jump)) {
                     return false;
                 }
             }
@@ -359,8 +358,8 @@ namespace peggame
         public override bool PlayAgain(Dictionary<char, bool> pegs) {
             var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true).Length;
 
-            history.TryAdd(startingPeg.Value, new List<Tuple<List<Tuple<Jump, int>>, int>>());
-            history[startingPeg.Value].Add(new Tuple<List<Tuple<Jump, int>>, int>(currentPath, pegsRemaining));
+            history.TryAdd(startingPeg.Value, new List<Tuple<List<History.JumpRecord>, int>>());
+            history[startingPeg.Value].Add(new Tuple<List<History.JumpRecord>, int>(currentPath, pegsRemaining));
 
             if (pegsRemaining == 1) {
                 wins[startingPeg.Value].Add(currentPath);
@@ -373,7 +372,7 @@ namespace peggame
             bool hasMoreMoves = false;
 
             foreach (var jump in history[startingPeg.Value][history[startingPeg.Value].Count - 1].Item1) {
-                if (jump.Item2 > 0) {
+                if (jump.JumpIndex > 0) {
                     hasMoreMoves = true;
                 }
             }
@@ -395,7 +394,7 @@ namespace peggame
 
                 if (wins[peg].Count > 0) {
                     foreach (var jump in wins[peg][0]) {
-                        Console.WriteLine($"Jumped {jump.Item1.From} over {jump.Item1.Over}.");
+                        Console.WriteLine($"Jumped {jump.From} over {jump.Over}.");
                     }
                 } else {
                     Console.WriteLine("No wins");
