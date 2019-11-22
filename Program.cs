@@ -38,26 +38,6 @@ namespace peggame
 
             return '∘';
         }
-
-        public static bool PlayAgain() {
-            Console.Write("Play Again? [y/n] ");
-
-            while (true) {
-                var answer = Console.ReadKey(true);
-
-                if (answer.Key == ConsoleKey.Escape || Char.ToUpper(answer.KeyChar) == 'Y' || Char.ToUpper(answer.KeyChar) == 'N') {
-                    if (Char.ToUpper(answer.KeyChar) == 'Y') {
-                        Console.WriteLine('Y');
-                        return true;
-                    }
-
-                    Console.WriteLine('N');
-
-                    return false;
-                }
-            }
-
-        }
     }
 
     struct Jump
@@ -71,7 +51,7 @@ namespace peggame
     {
         char? ChooseStartingPeg(Dictionary<char, bool> pegs);
         Jump? ChooseNextJump(Jump[] jumps);
-        void GameOver(Dictionary<char, bool> pegs);
+        bool PlayAgain(Dictionary<char, bool> pegs);
     }
 
     class InteractiveGameModel : IGameModel
@@ -119,11 +99,28 @@ namespace peggame
             return ChooseNextJump(jumps);
         }
 
-        public virtual void GameOver(Dictionary<char, bool> pegs) {
+        public virtual bool PlayAgain(Dictionary<char, bool> pegs) {
             var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true).Length;
 
             Console.WriteLine();
             Console.WriteLine($"Game Over. Pegs Remaining: {pegsRemaining}");
+
+            Console.Write("Play Again? [y/n] ");
+
+            while (true) {
+                var answer = Console.ReadKey(true);
+
+                if (answer.Key == ConsoleKey.Escape || Char.ToUpper(answer.KeyChar) == 'Y' || Char.ToUpper(answer.KeyChar) == 'N') {
+                    if (Char.ToUpper(answer.KeyChar) == 'Y') {
+                        Console.WriteLine('Y');
+                        return true;
+                    }
+
+                    Console.WriteLine('N');
+
+                    return false;
+                }
+            }
         }
 
         static bool CanJump(Jump[] jumps, char from, char? over = (char?)null) {
@@ -166,7 +163,7 @@ namespace peggame
     class LastChoiceGameModel : InteractiveGameModel
     {
         private Dictionary<char, List<Tuple<List<Tuple<Jump, int>>, int>>> history;
-        private int? nextStartingPeg = 0;
+        private int nextStartingPeg = 0;
         private char? startingPeg;
         private List<Tuple<Jump, int>> currentPath;
         private List<Tuple<Jump, int>> lastPath;
@@ -178,7 +175,7 @@ namespace peggame
 
         public override char? ChooseStartingPeg(Dictionary<char, bool> pegs)
         {
-            startingPeg = nextStartingPeg.HasValue ? GameInterface.PegChars[nextStartingPeg.Value] : (char?)null;
+            startingPeg = nextStartingPeg < GameInterface.PegChars.Length ? GameInterface.PegChars[nextStartingPeg] : (char?)null;
 
             if (startingPeg.HasValue) {
                 currentPath = new List<Tuple<Jump, int>>();
@@ -198,6 +195,14 @@ namespace peggame
         public override Jump? ChooseNextJump(Jump[] jumps)
         {
             Tuple<Jump, int> thisJump;
+
+            var attempts = 1;
+
+            if (history.ContainsKey(startingPeg.Value)) {
+                attempts = history[startingPeg.Value].Count + 1;
+            }
+
+            Console.WriteLine($"Starting Peg: {startingPeg}. Attempt: {attempts}.");
 
             if (lastPath != null) {
                 Console.WriteLine("Last Path:");
@@ -270,12 +275,11 @@ namespace peggame
             var jump = thisJump.Item1;
 
             Console.WriteLine($"Jumping {jump.From} over {jump.Over}.");
-            System.Threading.Thread.Sleep(100);
 
             return jump;
         }
 
-        public override void GameOver(Dictionary<char, bool> pegs) {
+        public override bool PlayAgain(Dictionary<char, bool> pegs) {
             var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true).Length;
 
             history.TryAdd(startingPeg.Value, new List<Tuple<List<Tuple<Jump, int>>, int>>());
@@ -300,6 +304,8 @@ namespace peggame
             if (!hasMoreMoves) {
                 nextStartingPeg++;
             }
+
+            return GameInterface.PegChars.Length > nextStartingPeg;
         }
     }
 
@@ -308,9 +314,10 @@ namespace peggame
         static void Main(string[] args)
         {
             IGameModel model = new LastChoiceGameModel();
+            Dictionary<char, bool> pegs;
 
             do {
-                var pegs = new Dictionary<char, bool>();
+                pegs = new Dictionary<char, bool>();
 
                 InitializePegs(pegs);
                 GameInterface.PrintPegs(pegs);
@@ -345,10 +352,8 @@ namespace peggame
                     jumps = GetPossibleJumps(pegs);
                 }
                 while (jumps.Length > 0);
-
-                model.GameOver(pegs);
             }
-            while (GameInterface.PlayAgain());
+            while (model.PlayAgain(pegs));
         }
 
         static void InitializePegs(Dictionary<char, bool> pegs) {
