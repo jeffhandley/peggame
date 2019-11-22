@@ -45,6 +45,24 @@ namespace peggame
         public char From;
         public char To;
         public char Over;
+
+        public override bool Equals(object obj) {
+            if (!(obj is Jump)) {
+                return false;
+            }
+
+            Jump jump = (Jump)obj;
+
+            if (jump.From == this.From && jump.Over == this.Over) {
+                return true;
+            }
+
+            return false;
+        }
+
+        public override int GetHashCode() {
+            return base.GetHashCode();
+        }
     }
 
     interface IGameModel
@@ -52,6 +70,7 @@ namespace peggame
         char? ChooseStartingPeg(Dictionary<char, bool> pegs);
         Jump? ChooseNextJump(Jump[] jumps);
         bool PlayAgain(Dictionary<char, bool> pegs);
+        void PrintStats();
     }
 
     class InteractiveGameModel : IGameModel
@@ -123,6 +142,9 @@ namespace peggame
             }
         }
 
+        public virtual void PrintStats() {
+        }
+
         static bool CanJump(Jump[] jumps, char from, char? over = (char?)null) {
             foreach (var jump in jumps) {
                 if (jump.From == from && (over == null || jump.Over == over.Value)) {
@@ -167,10 +189,12 @@ namespace peggame
         private char? startingPeg;
         private List<Tuple<Jump, int>> currentPath;
         private List<Tuple<Jump, int>> lastPath;
+        private List<List<Tuple<Jump, int>>> wins;
 
         public LastChoiceGameModel()
         {
             history = new Dictionary<char, List<Tuple<List<Tuple<Jump, int>>, int>>>();
+            wins = new List<List<Tuple<Jump, int>>>();
         }
 
         public override char? ChooseStartingPeg(Dictionary<char, bool> pegs)
@@ -196,62 +220,36 @@ namespace peggame
         {
             Tuple<Jump, int> thisJump;
 
-            var attempts = 1;
-
-            if (history.ContainsKey(startingPeg.Value)) {
-                attempts = history[startingPeg.Value].Count + 1;
-            }
-
-            Console.WriteLine($"Starting Peg: {startingPeg}. Attempt: {attempts}.");
-
-            if (lastPath != null) {
-                Console.WriteLine("Last Path:");
-
-                foreach (var lastPathJump in lastPath) {
-                    Console.WriteLine($"Jumped {lastPathJump.Item1.From} over {lastPathJump.Item1.Over}. Jump index: {lastPathJump.Item2}.");
-                }
-            }
-
             // If the last path got as far as our previous jump
             if (lastPath != null && lastPath.Count > currentPath.Count - 1) {
-                Jump? lastPathPreviousJump = currentPath.Count > 0 ? lastPath[currentPath.Count - 1].Item1 : (Jump?)null;
-                Jump? currentPathPreviousJump = currentPath.Count > 0 ? currentPath[currentPath.Count - 1].Item1 : (Jump?)null;
-
-                // And if the last path's previous jump was the
-                // same as our previous jump, then we need to decide
-                // what to do on this jump based on the last path
-                if (currentPathPreviousJump.HasValue && lastPathPreviousJump.Value.From == currentPathPreviousJump.Value.From && lastPathPreviousJump.Value.Over == currentPathPreviousJump.Value.Over) {
+                // If the paths have been the sae so far, then we need to
+                // decide what to do on this jump based on the last path
+                if (PathsEqual(lastPath, currentPath)) {
                     // The previous jumps were the same (or this is the first jump)
                     // Now we need to look ahead at the next jump to determine if
                     // this jump should be the same
                     var lastPathThisJumpIndex = lastPath[currentPath.Count].Item2;
+                    var hasRemainingDecrements = false;
 
-                    if (lastPath.Count > currentPath.Count + 1) {
-                        var lastPathNextJumpIndex = lastPath[currentPath.Count + 1].Item2;
-
-                        if (lastPathNextJumpIndex > 0) {
-                            // There are remaining jumps to decrement on the next
-                            // jump, so we will keep this jump the same
-                            thisJump = new Tuple<Jump, int>(jumps[lastPathThisJumpIndex], lastPathThisJumpIndex);
-                        } else {
-                            // There are no remaining jumps to decrement on the next
-                            // jump, so we need to decrement this one if possible
-
-                            if (lastPathThisJumpIndex > 0) {
-                                thisJump = new Tuple<Jump, int>(jumps[lastPathThisJumpIndex - 1], lastPathThisJumpIndex - 1);
-                            } else {
-                                throw new Exception("Cannot decrement this jump");
-                            }
+                    for (var i = currentPath.Count + 1; i < lastPath.Count; i++) {
+                        if (lastPath[i].Item2 > 0) {
+                            hasRemainingDecrements = true;
+                            break;
                         }
+                    }
+
+                    if (hasRemainingDecrements == true) {
+                        // There are remaining jumps to decrement,
+                        // so we will keep this jump the same
+                        thisJump = new Tuple<Jump, int>(jumps[lastPathThisJumpIndex], lastPathThisJumpIndex);
                     } else {
-                        // The previous jumps were the same, but there is
-                        // no future jump in the last path, so this was
-                        // the last jump in that path. We will try to
-                        // decrement this jump.
+                        // There are no remaining jumps to decrement,
+                        // so we need to decrement this one if possible
+
                         if (lastPathThisJumpIndex > 0) {
                             thisJump = new Tuple<Jump, int>(jumps[lastPathThisJumpIndex - 1], lastPathThisJumpIndex - 1);
                         } else {
-                            throw new Exception("Cannot decrement this jump; there is no future jump");
+                            throw new Exception($"Cannot decrement this jump. Jump number: {currentPath.Count}. Has remaining decrements: {hasRemainingDecrements}.");
                         }
                     }
                 } else {
@@ -263,12 +261,6 @@ namespace peggame
                 // The last path didn't get as far as we have gotten
                 // We will choose the last option for this jump
                 thisJump = new Tuple<Jump, int>(jumps[jumps.Length - 1], jumps.Length - 1);
-            }
-
-            Console.WriteLine("This Path:");
-
-            foreach (var currentPathJump in currentPath) {
-                Console.WriteLine($"Jumped {currentPathJump.Item1.From} over {currentPathJump.Item1.Over}");
             }
 
             currentPath.Add(thisJump);
@@ -289,7 +281,7 @@ namespace peggame
             Console.WriteLine($"Game Over. Pegs Remaining: {pegsRemaining}");
 
             Console.WriteLine();
-            Console.WriteLine($"Starting Peg: {startingPeg}. Attempt: {history[startingPeg.Value].Count}.");
+            Console.WriteLine($"Starting Peg: {startingPeg}. Attempt: {history[startingPeg.Value].Count.ToString("N0")}. Wins: {wins.Count.ToString("N0")}.");
 
             bool hasMoreMoves = false;
 
@@ -305,7 +297,49 @@ namespace peggame
                 nextStartingPeg++;
             }
 
+            if (pegsRemaining == 1) {
+                wins.Add(currentPath);
+                Console.WriteLine($"Game won! Wins: {wins.Count}");
+            }
+
             return GameInterface.PegChars.Length > nextStartingPeg;
+        }
+
+        public override void PrintStats() {
+            var attempts = 1;
+
+            if (history.ContainsKey(startingPeg.Value)) {
+                attempts = history[startingPeg.Value].Count + 1;
+            }
+
+            Console.WriteLine($"Starting Peg: {startingPeg}. Attempt: {attempts.ToString("N0")}. Wins: {wins.Count.ToString("N0")}.");
+            Console.WriteLine();
+            Console.WriteLine("Last Path:".PadRight(40) + "This Path:");
+
+            var pathLength = Math.Max(lastPath != null ? lastPath.Count : 0, currentPath.Count);
+
+            for (var i = 0; i < pathLength; i++) {
+                var lastJump = lastPath != null && lastPath.Count > i ? $"Jumped {lastPath[i].Item1.From} over {lastPath[i].Item1.Over}. Jump index: {lastPath[i].Item2}." : "";
+                var currentJump = currentPath.Count > i ? $"Jumped {currentPath[i].Item1.From} over {currentPath[i].Item1.Over}. Jump index: {currentPath[i].Item2}." : "";
+
+                Console.WriteLine(lastJump.PadRight(40) + currentJump);
+            }
+
+            Console.WriteLine();
+        }
+
+        static bool PathsEqual(List<Tuple<Jump, int>> pastPath, List<Tuple<Jump, int>> currentPath) {
+            if (pastPath.Count < currentPath.Count) {
+                return false;
+            }
+
+            for (var j = 0; j < currentPath.Count; j++) {
+                if (!currentPath[j].Item1.Equals(pastPath[j].Item1)) {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 
@@ -335,6 +369,7 @@ namespace peggame
                 var jumps = GetPossibleJumps(pegs);
 
                 do {
+                    model.PrintStats();
                     GameInterface.PrintJumps(jumps);
 
                     var jump = model.ChooseNextJump(jumps);
