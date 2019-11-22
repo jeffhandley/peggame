@@ -184,18 +184,18 @@ namespace peggame
 
     class LastChoiceGameModel : InteractiveGameModel
     {
-        protected Dictionary<char, List<Tuple<List<History.JumpRecord>, int>>> history;
+        protected Dictionary<char, List<Tuple<History.JumpList, int>>> history;
         protected int nextStartingPeg = 0;
         protected char? startingPeg;
-        protected List<History.JumpRecord> currentPath;
-        protected List<History.JumpRecord> lastPath;
-        protected Dictionary<char, List<List<History.JumpRecord>>> wins;
+        protected History.JumpList currentPath;
+        protected History.JumpList lastPath;
+        protected Dictionary<char, List<History.JumpList>> wins;
         private int? maxAttemptsPerPeg;
 
         public LastChoiceGameModel()
         {
-            history = new Dictionary<char, List<Tuple<List<History.JumpRecord>, int>>>();
-            wins = new Dictionary<char, List<List<History.JumpRecord>>>();
+            history = new Dictionary<char, List<Tuple<History.JumpList, int>>>();
+            wins = new Dictionary<char, List<History.JumpList>>();
         }
 
         public LastChoiceGameModel(string[] args) : this()
@@ -217,16 +217,16 @@ namespace peggame
             startingPeg = nextStartingPeg < GameInterface.PegChars.Length ? GameInterface.PegChars[nextStartingPeg] : (char?)null;
 
             if (startingPeg.HasValue) {
-                wins.TryAdd(startingPeg.Value, new List<List<History.JumpRecord>>());
-                currentPath = new List<History.JumpRecord>();
+                wins.TryAdd(startingPeg.Value, new List<History.JumpList>());
+                currentPath = new History.JumpList();
 
                 if (history.ContainsKey(startingPeg.Value)) {
                     var paths = history[startingPeg.Value];
-                    lastPath = paths.Count > 0 ? paths[paths.Count - 1].Item1 : (List<History.JumpRecord>)null;
+                    lastPath = paths.Count > 0 ? paths[paths.Count - 1].Item1 : (History.JumpList)null;
                 }
             } else {
-                currentPath = (List<History.JumpRecord>)null;
-                lastPath = (List<History.JumpRecord>)null;
+                currentPath = (History.JumpList)null;
+                lastPath = (History.JumpList)null;
             }
 
             return startingPeg;
@@ -289,8 +289,8 @@ namespace peggame
         public override bool PlayAgain(Dictionary<char, bool> pegs) {
             var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true).Length;
 
-            history.TryAdd(startingPeg.Value, new List<Tuple<List<History.JumpRecord>, int>>());
-            history[startingPeg.Value].Add(new Tuple<List<History.JumpRecord>, int>(currentPath, pegsRemaining));
+            history.TryAdd(startingPeg.Value, new List<Tuple<History.JumpList, int>>());
+            history[startingPeg.Value].Add(new Tuple<History.JumpList, int>(currentPath, pegsRemaining));
 
             if (pegsRemaining == 1) {
                 wins[startingPeg.Value].Add(currentPath);
@@ -338,7 +338,7 @@ namespace peggame
             Console.WriteLine();
         }
 
-        static bool PathsEqual(List<History.JumpRecord> pastPath, List<History.JumpRecord> currentPath) {
+        static bool PathsEqual(History.JumpList pastPath, History.JumpList currentPath) {
             if (pastPath.Count < currentPath.Count) {
                 return false;
             }
@@ -358,8 +358,8 @@ namespace peggame
         public override bool PlayAgain(Dictionary<char, bool> pegs) {
             var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true).Length;
 
-            history.TryAdd(startingPeg.Value, new List<Tuple<List<History.JumpRecord>, int>>());
-            history[startingPeg.Value].Add(new Tuple<List<History.JumpRecord>, int>(currentPath, pegsRemaining));
+            history.TryAdd(startingPeg.Value, new List<Tuple<History.JumpList, int>>());
+            history[startingPeg.Value].Add(new Tuple<History.JumpList, int>(currentPath, pegsRemaining));
 
             if (pegsRemaining == 1) {
                 wins[startingPeg.Value].Add(currentPath);

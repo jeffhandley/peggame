@@ -20,4 +20,9 @@ namespace peggame.History
             this.JumpIndex = index;
         }
     }
+
+    class JumpList : List<JumpRecord>
+    {
+
+    }
 }
