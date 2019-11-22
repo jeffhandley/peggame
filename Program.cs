@@ -311,6 +311,7 @@ namespace peggame
 
             if (!hasMoreMoves || (maxAttemptsPerPeg.HasValue && history[startingPeg.Value].Count >= maxAttemptsPerPeg.Value)) {
                 nextStartingPeg++;
+                lastPath = null;
             }
 
             return GameInterface.PegChars.Length > nextStartingPeg;
@@ -379,6 +380,7 @@ namespace peggame
 
             if (!hasMoreMoves || wins[startingPeg.Value].Count >= 1) {
                 nextStartingPeg++;
+                lastPath = null;
             }
 
             if (GameInterface.PegChars.Length > nextStartingPeg) {
@@ -391,8 +393,12 @@ namespace peggame
                 Console.WriteLine($"Starting Peg: {peg}");
                 Console.WriteLine();
 
-                foreach (var jump in wins[peg][0]) {
-                    Console.WriteLine($"Jumped {jump.Item1.From} over {jump.Item1.Over}.");
+                if (wins[peg].Count > 0) {
+                    foreach (var jump in wins[peg][0]) {
+                        Console.WriteLine($"Jumped {jump.Item1.From} over {jump.Item1.Over}.");
+                    }
+                } else {
+                    Console.WriteLine("No wins");
                 }
 
                 Console.WriteLine();
