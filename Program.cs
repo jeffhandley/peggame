@@ -184,7 +184,7 @@ namespace peggame
 
     class LastChoiceGameModel : InteractiveGameModel
     {
-        protected Dictionary<char, List<History.GameRecord>> history;
+        protected Dictionary<char, History.GameList> history;
         protected int nextStartingPeg = 0;
         protected char? startingPeg;
         protected History.JumpList currentPath;
@@ -194,7 +194,7 @@ namespace peggame
 
         public LastChoiceGameModel()
         {
-            history = new Dictionary<char, List<History.GameRecord>>();
+            history = new Dictionary<char, History.GameList>();
             wins = new Dictionary<char, List<History.JumpList>>();
         }
 
@@ -289,7 +289,7 @@ namespace peggame
         public override bool PlayAgain(Dictionary<char, bool> pegs) {
             var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true).Length;
 
-            history.TryAdd(startingPeg.Value, new List<History.GameRecord>());
+            history.TryAdd(startingPeg.Value, new History.GameList());
             history[startingPeg.Value].Add(new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining));
 
             if (pegsRemaining == 1) {
@@ -358,7 +358,7 @@ namespace peggame
         public override bool PlayAgain(Dictionary<char, bool> pegs) {
             var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true).Length;
 
-            history.TryAdd(startingPeg.Value, new List<History.GameRecord>());
+            history.TryAdd(startingPeg.Value, new History.GameList());
             history[startingPeg.Value].Add(new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining));
 
             if (pegsRemaining == 1) {

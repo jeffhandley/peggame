@@ -38,4 +38,8 @@ namespace peggame.History
             this.PegsRemaining = pegsRemaining;
         }
     }
+
+    class GameList : List<GameRecord>
+    {
+    }
 }
