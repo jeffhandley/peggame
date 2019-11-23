@@ -196,6 +196,7 @@ namespace peggame
         protected History.JumpList lastPath;
         protected Dictionary<char, List<History.GameRecord>> wins;
         private int? maxAttemptsPerPeg;
+        private bool quietOutput = false;
 
         public LastChoiceGameModel()
         {
@@ -214,6 +215,10 @@ namespace peggame
                 if (maxAttempts > 0) {
                     maxAttemptsPerPeg = maxAttempts;
                 }
+            }
+
+            if (Array.IndexOf(args, "-q") >= 0) {
+                quietOutput = true;
             }
         }
 
@@ -324,9 +329,9 @@ namespace peggame
 
         public override void PrintStats() {
             Console.WriteLine();
-            Console.WriteLine("Last Path:".PadRight(35) + "This Path:");
+            Console.WriteLine("".PadRight(65) + (!quietOutput ? "Last Path:".PadRight(35) + "This Path:" : ""));
 
-            var pathLength = Math.Max(Math.Max(lastPath != null ? lastPath.Count : 0, currentPath.Count), history.Keys.Count);
+            var pathLength = !quietOutput ? Math.Max(Math.Max(lastPath != null ? lastPath.Count : 0, currentPath.Count), history.Keys.Count) : history.Keys.Count;
             var pegStats = new List<string>();
 
             foreach (var peg in history.Keys) {
@@ -335,11 +340,15 @@ namespace peggame
             }
 
             for (var i = 0; i < pathLength; i++) {
-                var lastJump = lastPath != null && lastPath.Count > i ? $"Jumped {lastPath[i].From} over {lastPath[i].Over}. Jump index: {lastPath[i].JumpIndex}." : "";
-                var currentJump = currentPath.Count > i ? $"Jumped {currentPath[i].From} over {currentPath[i].Over}. Jump index: {currentPath[i].JumpIndex}." : "";
                 var pegStat = pegStats.Count > i ? pegStats[i] : "";
+                var lastJump = !quietOutput && lastPath != null && lastPath.Count > i ? $"Jumped {lastPath[i].From} over {lastPath[i].Over}. Jump index: {lastPath[i].JumpIndex}." : "";
+                var currentJump = !quietOutput && currentPath.Count > i ? $"Jumped {currentPath[i].From} over {currentPath[i].Over}. Jump index: {currentPath[i].JumpIndex}." : "";
 
-                Console.WriteLine(lastJump.PadRight(35) + currentJump.PadRight(35) + pegStat);
+                if (quietOutput) {
+                    Console.WriteLine(pegStat);
+                } else {
+                    Console.WriteLine(pegStat.PadRight(65) + lastJump.PadRight(35) + currentJump);
+                }
             }
 
             Console.WriteLine();
