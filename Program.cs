@@ -38,6 +38,24 @@ namespace peggame
 
             return '∘';
         }
+
+        public static void WriteWins(Dictionary<char, List<History.GameRecord>> wins)
+        {
+            var winData = new List<History.GameRecord>();
+
+            foreach (var peg in wins.Keys)
+            {
+                winData.AddRange(wins[peg]);
+            }
+
+            var options = new System.Text.Json.JsonSerializerOptions
+            {
+                WriteIndented = true
+            };
+
+            string winsJson = System.Text.Json.JsonSerializer.Serialize(winData, options);
+            System.IO.File.WriteAllText("wins.json", winsJson);
+        }
     }
 
     struct Jump
@@ -169,19 +187,6 @@ namespace peggame
         }
     }
 
-    class FirstChoiceGameModel : InteractiveGameModel
-    {
-        public override Jump? ChooseNextJump(Jump[] jumps)
-        {
-            var jump = jumps[0];
-
-            Console.WriteLine($"Jumping {jump.From} over {jump.Over}");
-            System.Threading.Thread.Sleep(1000);
-
-            return jump;
-        }
-    }
-
     class LastChoiceGameModel : InteractiveGameModel
     {
         protected Dictionary<char, List<History.GameRecord>> history;
@@ -295,7 +300,6 @@ namespace peggame
 
             if (pegsRemaining == 1) {
                 wins[startingPeg.Value].Add(new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining));
-
                 Console.WriteLine("Game won!");
             }
 
@@ -312,6 +316,7 @@ namespace peggame
             if (!hasMoreMoves || (maxAttemptsPerPeg.HasValue && history[startingPeg.Value].Count >= maxAttemptsPerPeg.Value)) {
                 nextStartingPeg++;
                 lastPath = null;
+                GameInterface.WriteWins(wins);
             }
 
             return GameInterface.PegChars.Length > nextStartingPeg;
@@ -364,7 +369,6 @@ namespace peggame
 
             if (pegsRemaining == 1) {
                 wins[startingPeg.Value].Add(new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining));
-
                 Console.WriteLine("Game won!");
             }
 
@@ -381,6 +385,7 @@ namespace peggame
             if (!hasMoreMoves || wins[startingPeg.Value].Count >= 1) {
                 nextStartingPeg++;
                 lastPath = null;
+                GameInterface.WriteWins(wins);
             }
 
             if (GameInterface.PegChars.Length > nextStartingPeg) {
@@ -403,21 +408,6 @@ namespace peggame
 
                 Console.WriteLine();
             }
-
-            var winData = new List<History.GameRecord>();
-
-            foreach (var winPeg in wins.Keys)
-            {
-                winData.AddRange(wins[winPeg]);
-            }
-
-            var options = new System.Text.Json.JsonSerializerOptions
-            {
-                WriteIndented = true
-            };
-
-            string winsJson = System.Text.Json.JsonSerializer.Serialize(winData, options);
-            System.IO.File.WriteAllText("wins.json", winsJson);
 
             return false;
         }
