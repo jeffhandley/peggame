@@ -452,7 +452,11 @@ namespace peggame
                             Console.ReadKey(true);
                         }
 
-                        Console.ReadKey(true);
+                        var unpause = Console.ReadKey(true).Key;
+
+                        if (unpause == ConsoleKey.Escape) {
+                            return;
+                        }
                     }
 
                     var jump = model.ChooseNextJump(jumps);
