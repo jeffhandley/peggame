@@ -1,11 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace peggame
 {
     class GameInterface
     {
         public static char[] PegChars = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'A', 'B', 'C', 'D', 'E'};
+        public static char[][] Others = new char[][]
+        {
+            new char[] {'A', 'B', '7', 'C', '8', '4', 'D', '9', '5', '2', 'E', '0', '6', '3', '1'},
+            new char[] {'E', '0', 'D', '6', '9', 'C', '3', '5', '8', 'B', '1', '2', '4', '7', 'A'},
+            new char[] {'1', '3', '2', '6', '5', '4', '0', '9', '8', '7', 'E', 'D', 'C', 'B', 'A'},
+            new char[] {'A', '7', 'B', '4', '8', 'C', '2', '5', '9', 'D', '1', '3', '6', '0', 'E'},
+            new char[] {'E', 'D', '0', 'C', '9', '6', 'B', '8', '5', '3', 'A', '7', '4', '2', '1'}
+        };
 
         public static void PrintPegs(Dictionary<char, bool> pegs) {
             Console.Clear();
@@ -41,20 +50,16 @@ namespace peggame
 
         public static void WriteWins(Dictionary<char, List<History.GameRecord>> wins)
         {
-            var winData = new List<History.GameRecord>();
-
-            foreach (var peg in wins.Keys)
-            {
-                winData.AddRange(wins[peg]);
-            }
-
             var options = new System.Text.Json.JsonSerializerOptions
             {
                 WriteIndented = true
             };
 
-            string winsJson = System.Text.Json.JsonSerializer.Serialize(winData, options);
-            System.IO.File.WriteAllText("wins.json", winsJson);
+            foreach (var peg in wins.Keys)
+            {
+                string winsJson = System.Text.Json.JsonSerializer.Serialize(wins[peg], options);
+                System.IO.File.WriteAllText($"wins-{peg}.json", winsJson);
+            }
         }
     }
 
@@ -191,6 +196,7 @@ namespace peggame
     {
         protected Dictionary<char, List<History.GameRecord>> history;
         protected int nextStartingPeg = 0;
+        protected int lastStartingPeg = 14;
         protected char? startingPeg;
         protected History.JumpList currentPath;
         protected History.JumpList lastPath;
@@ -219,6 +225,19 @@ namespace peggame
 
             if (Array.IndexOf(args, "-q") >= 0) {
                 quietOutput = true;
+            }
+
+
+            var fromArg = Array.IndexOf(args, "-from");
+
+            if (fromArg >= 0 && args.Length > fromArg + 1) {
+                nextStartingPeg = Array.IndexOf(GameInterface.PegChars, args[fromArg + 1][0]);
+            }
+
+            var toArg = Array.IndexOf(args, "-to");
+
+            if (toArg >= 0 && args.Length > toArg + 1) {
+                lastStartingPeg = Array.IndexOf(GameInterface.PegChars, args[toArg + 1][0]);
             }
         }
 
@@ -300,12 +319,12 @@ namespace peggame
 
         public override bool PlayAgain(Dictionary<char, bool> pegs) {
             var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true).Length;
+            var gameRecord = new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining);
 
-            history[startingPeg.Value].Add(new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining));
+            history[startingPeg.Value].Add(gameRecord);
 
             if (pegsRemaining == 1) {
-                wins[startingPeg.Value].Add(new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining));
-                Console.WriteLine("Game won!");
+                wins[startingPeg.Value].Add(gameRecord);
             }
 
             PrintStats();
@@ -324,7 +343,7 @@ namespace peggame
                 GameInterface.WriteWins(wins);
             }
 
-            return GameInterface.PegChars.Length > nextStartingPeg;
+            return Math.Min(GameInterface.PegChars.Length, lastStartingPeg + 1) > nextStartingPeg;
         }
 
         public override void PrintStats() {
