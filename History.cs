@@ -6,11 +6,11 @@ namespace peggame.History
 {
     class JumpRecord
     {
-        public char From;
-        public char Over;
-        public char To;
+        public char From {get; set;}
+        public char Over {get; set;}
+        public char To {get; set;}
         public Jump Jump;
-        public int JumpIndex;
+        public int JumpIndex {get; set;}
 
         public JumpRecord(Jump jump, int index)
         {
@@ -28,39 +28,15 @@ namespace peggame.History
 
     class GameRecord
     {
-        public char StartingPeg;
-        public JumpList JumpList;
-        public int PegsRemaining;
+        public char StartingPeg {get; set;}
+        public JumpList JumpList {get; set;}
+        public int PegsRemaining {get; set;}
 
         public GameRecord(char startingPeg, JumpList jumps, int pegsRemaining)
         {
             this.StartingPeg = startingPeg;
             this.JumpList = jumps;
             this.PegsRemaining = pegsRemaining;
-        }
-    }
-
-    class GameList : List<GameRecord>
-    {
-        public bool HasStartingPeg(char startingPeg)
-        {
-            return this.Exists(x => x.StartingPeg == startingPeg);
-        }
-
-        public char[] StartingPegs
-        {
-            get
-            {
-                return this.Select(x => x.StartingPeg).Distinct().ToArray();
-            }
-        }
-
-        public List<GameRecord> this[char startingPeg]
-        {
-            get
-            {
-                return this.FindAll(x => x.StartingPeg == startingPeg);
-            }
         }
     }
 }
