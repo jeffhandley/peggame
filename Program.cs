@@ -189,13 +189,13 @@ namespace peggame
         protected char? startingPeg;
         protected History.JumpList currentPath;
         protected History.JumpList lastPath;
-        protected Dictionary<char, List<History.JumpList>> wins;
+        protected Dictionary<char, History.GameList> wins;
         private int? maxAttemptsPerPeg;
 
         public LastChoiceGameModel()
         {
             history = new Dictionary<char, History.GameList>();
-            wins = new Dictionary<char, List<History.JumpList>>();
+            wins = new Dictionary<char, History.GameList>();
         }
 
         public LastChoiceGameModel(string[] args) : this()
@@ -217,7 +217,7 @@ namespace peggame
             startingPeg = nextStartingPeg < GameInterface.PegChars.Length ? GameInterface.PegChars[nextStartingPeg] : (char?)null;
 
             if (startingPeg.HasValue) {
-                wins.TryAdd(startingPeg.Value, new List<History.JumpList>());
+                wins.TryAdd(startingPeg.Value, new History.GameList());
                 currentPath = new History.JumpList();
 
                 if (history.ContainsKey(startingPeg.Value)) {
@@ -293,7 +293,7 @@ namespace peggame
             history[startingPeg.Value].Add(new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining));
 
             if (pegsRemaining == 1) {
-                wins[startingPeg.Value].Add(currentPath);
+                wins[startingPeg.Value].Add(new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining));
 
                 Console.WriteLine("Game won!");
             }
@@ -362,7 +362,7 @@ namespace peggame
             history[startingPeg.Value].Add(new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining));
 
             if (pegsRemaining == 1) {
-                wins[startingPeg.Value].Add(currentPath);
+                wins[startingPeg.Value].Add(new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining));
 
                 Console.WriteLine("Game won!");
             }
@@ -393,7 +393,7 @@ namespace peggame
                 Console.WriteLine();
 
                 if (wins[peg].Count > 0) {
-                    foreach (var jump in wins[peg][0]) {
+                    foreach (var jump in wins[peg][0].JumpList) {
                         Console.WriteLine($"Jumped {jump.From} over {jump.Over}.");
                     }
                 } else {
