@@ -184,18 +184,18 @@ namespace peggame
 
     class LastChoiceGameModel : InteractiveGameModel
     {
-        protected Dictionary<char, History.GameList> history;
+        protected History.GameList history;
         protected int nextStartingPeg = 0;
         protected char? startingPeg;
         protected History.JumpList currentPath;
         protected History.JumpList lastPath;
-        protected Dictionary<char, History.GameList> wins;
+        protected History.GameList wins;
         private int? maxAttemptsPerPeg;
 
         public LastChoiceGameModel()
         {
-            history = new Dictionary<char, History.GameList>();
-            wins = new Dictionary<char, History.GameList>();
+            history = new History.GameList();
+            wins = new History.GameList();
         }
 
         public LastChoiceGameModel(string[] args) : this()
@@ -217,10 +217,9 @@ namespace peggame
             startingPeg = nextStartingPeg < GameInterface.PegChars.Length ? GameInterface.PegChars[nextStartingPeg] : (char?)null;
 
             if (startingPeg.HasValue) {
-                wins.TryAdd(startingPeg.Value, new History.GameList());
                 currentPath = new History.JumpList();
 
-                if (history.ContainsKey(startingPeg.Value)) {
+                if (history.HasStartingPeg(startingPeg.Value)) {
                     var paths = history[startingPeg.Value];
                     lastPath = paths.Count > 0 ? paths[paths.Count - 1].JumpList : (History.JumpList)null;
                 }
@@ -289,11 +288,10 @@ namespace peggame
         public override bool PlayAgain(Dictionary<char, bool> pegs) {
             var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true).Length;
 
-            history.TryAdd(startingPeg.Value, new History.GameList());
-            history[startingPeg.Value].Add(new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining));
+            history.Add(new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining));
 
             if (pegsRemaining == 1) {
-                wins[startingPeg.Value].Add(new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining));
+                wins.Add(new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining));
 
                 Console.WriteLine("Game won!");
             }
@@ -320,10 +318,10 @@ namespace peggame
             Console.WriteLine();
             Console.WriteLine("Last Path:".PadRight(35) + "This Path:");
 
-            var pathLength = Math.Max(Math.Max(lastPath != null ? lastPath.Count : 0, currentPath.Count), history.Keys.Count);
+            var pathLength = Math.Max(Math.Max(lastPath != null ? lastPath.Count : 0, currentPath.Count), history.StartingPegs.Length);
             var pegStats = new List<string>();
 
-            foreach (var peg in history.Keys) {
+            foreach (var peg in history.StartingPegs) {
                 pegStats.Add($"Starting Peg: {peg}. Attempts: {history[peg].Count.ToString("N0")}. Wins: {wins[peg].Count.ToString("N0")} ({((decimal)wins[peg].Count / (decimal)history[peg].Count).ToString("P2")}).");
             }
 
@@ -358,11 +356,10 @@ namespace peggame
         public override bool PlayAgain(Dictionary<char, bool> pegs) {
             var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true).Length;
 
-            history.TryAdd(startingPeg.Value, new History.GameList());
-            history[startingPeg.Value].Add(new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining));
+            history.Add(new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining));
 
             if (pegsRemaining == 1) {
-                wins[startingPeg.Value].Add(new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining));
+                wins.Add(new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining));
 
                 Console.WriteLine("Game won!");
             }
@@ -388,7 +385,7 @@ namespace peggame
 
             Console.WriteLine("Wins:");
 
-            foreach (var peg in wins.Keys) {
+            foreach (var peg in wins.StartingPegs) {
                 Console.WriteLine($"Starting Peg: {peg}");
                 Console.WriteLine();
 

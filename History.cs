@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace peggame.History
 {
@@ -41,5 +42,25 @@ namespace peggame.History
 
     class GameList : List<GameRecord>
     {
+        public bool HasStartingPeg(char startingPeg)
+        {
+            return this.Exists(x => x.StartingPeg == startingPeg);
+        }
+
+        public char[] StartingPegs
+        {
+            get
+            {
+                return this.Select(x => x.StartingPeg).Distinct().ToArray();
+            }
+        }
+
+        public List<GameRecord> this[char startingPeg]
+        {
+            get
+            {
+                return this.FindAll(x => x.StartingPeg == startingPeg);
+            }
+        }
     }
 }
