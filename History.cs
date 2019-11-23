@@ -23,6 +23,19 @@ namespace peggame.History
 
     class JumpList : List<JumpRecord>
     {
+    }
 
+    class GameRecord
+    {
+        public char StartingPeg;
+        public JumpList JumpList;
+        public int PegsRemaining;
+
+        public GameRecord(char startingPeg, JumpList jumps, int pegsRemaining)
+        {
+            this.StartingPeg = startingPeg;
+            this.JumpList = jumps;
+            this.PegsRemaining = pegsRemaining;
+        }
     }
 }

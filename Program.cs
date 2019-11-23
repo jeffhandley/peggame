@@ -184,7 +184,7 @@ namespace peggame
 
     class LastChoiceGameModel : InteractiveGameModel
     {
-        protected Dictionary<char, List<Tuple<History.JumpList, int>>> history;
+        protected Dictionary<char, List<History.GameRecord>> history;
         protected int nextStartingPeg = 0;
         protected char? startingPeg;
         protected History.JumpList currentPath;
@@ -194,7 +194,7 @@ namespace peggame
 
         public LastChoiceGameModel()
         {
-            history = new Dictionary<char, List<Tuple<History.JumpList, int>>>();
+            history = new Dictionary<char, List<History.GameRecord>>();
             wins = new Dictionary<char, List<History.JumpList>>();
         }
 
@@ -222,7 +222,7 @@ namespace peggame
 
                 if (history.ContainsKey(startingPeg.Value)) {
                     var paths = history[startingPeg.Value];
-                    lastPath = paths.Count > 0 ? paths[paths.Count - 1].Item1 : (History.JumpList)null;
+                    lastPath = paths.Count > 0 ? paths[paths.Count - 1].JumpList : (History.JumpList)null;
                 }
             } else {
                 currentPath = (History.JumpList)null;
@@ -289,8 +289,8 @@ namespace peggame
         public override bool PlayAgain(Dictionary<char, bool> pegs) {
             var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true).Length;
 
-            history.TryAdd(startingPeg.Value, new List<Tuple<History.JumpList, int>>());
-            history[startingPeg.Value].Add(new Tuple<History.JumpList, int>(currentPath, pegsRemaining));
+            history.TryAdd(startingPeg.Value, new List<History.GameRecord>());
+            history[startingPeg.Value].Add(new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining));
 
             if (pegsRemaining == 1) {
                 wins[startingPeg.Value].Add(currentPath);
@@ -302,7 +302,7 @@ namespace peggame
 
             bool hasMoreMoves = false;
 
-            foreach (var jump in history[startingPeg.Value][history[startingPeg.Value].Count - 1].Item1) {
+            foreach (var jump in history[startingPeg.Value][history[startingPeg.Value].Count - 1].JumpList) {
                 if (jump.JumpIndex > 0) {
                     hasMoreMoves = true;
                 }
@@ -358,8 +358,8 @@ namespace peggame
         public override bool PlayAgain(Dictionary<char, bool> pegs) {
             var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true).Length;
 
-            history.TryAdd(startingPeg.Value, new List<Tuple<History.JumpList, int>>());
-            history[startingPeg.Value].Add(new Tuple<History.JumpList, int>(currentPath, pegsRemaining));
+            history.TryAdd(startingPeg.Value, new List<History.GameRecord>());
+            history[startingPeg.Value].Add(new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining));
 
             if (pegsRemaining == 1) {
                 wins[startingPeg.Value].Add(currentPath);
@@ -371,7 +371,7 @@ namespace peggame
 
             bool hasMoreMoves = false;
 
-            foreach (var jump in history[startingPeg.Value][history[startingPeg.Value].Count - 1].Item1) {
+            foreach (var jump in history[startingPeg.Value][history[startingPeg.Value].Count - 1].JumpList) {
                 if (jump.JumpIndex > 0) {
                     hasMoreMoves = true;
                 }
