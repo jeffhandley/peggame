@@ -6,7 +6,7 @@ namespace peggame
     interface IGameModel
     {
         char? ChooseStartingPeg(Dictionary<char, bool> pegs);
-        Jump? ChooseNextJump(Jump[] jumps);
+        Jump? ChooseNextJump(Dictionary<char, bool> pegs);
         bool PlayAgain(Dictionary<char, bool> pegs);
         void PrintStats();
     }

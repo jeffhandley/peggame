@@ -17,8 +17,9 @@ namespace peggame
             return peg;
         }
 
-        public virtual Jump? ChooseNextJump(Jump[] jumps)
+        public virtual Jump? ChooseNextJump(Dictionary<char, bool> pegs)
         {
+            var jumps = GameInterface.GetPossibleJumps(pegs);
             GameInterface.PrintJumps(jumps);
             Console.Write("Choose where to jump from: ");
 
@@ -46,7 +47,7 @@ namespace peggame
                 }
             }
 
-            return ChooseNextJump(jumps);
+            return ChooseNextJump(pegs);
         }
 
         public virtual bool PlayAgain(Dictionary<char, bool> pegs) {

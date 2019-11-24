@@ -74,8 +74,9 @@ namespace peggame
             return startingPeg;
         }
 
-        public override Jump? ChooseNextJump(Jump[] jumps)
+        public override Jump? ChooseNextJump(Dictionary<char, bool> pegs)
         {
+            var jumps = GameInterface.GetPossibleJumps(pegs);
             History.JumpRecord thisJump;
 
             // If the last path got as far as our previous jump
