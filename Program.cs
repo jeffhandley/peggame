@@ -9,11 +9,11 @@ namespace peggame
         {
             IGameModel model;
 
-            if (Array.IndexOf(args, "-a") >= 0) {
+            if (Array.IndexOf(args, "-paths") >= 0) {
                 model = new AllPathsFromStartingPegModel(args);
-            } else if (Array.IndexOf(args, "-1") >= 0) {
+            } else if (Array.IndexOf(args, "-first") >= 0) {
                 model = new FirstWinFromStartingPegModel();
-            } else if (Array.IndexOf(args, "-p") >= 0) {
+            } else if (Array.IndexOf(args, "-pegs") >= 0) {
                 model = new AllPathsFromRemainingPegsModel();
             } else {
                 model = new InteractiveGameModel();
@@ -54,15 +54,9 @@ namespace peggame
                         }
                     }
 
-                    var jump = model.ChooseNextJump(pegs);
-
-                    if (jump == null) {
+                    if (!model.PerformNextJump(pegs)) {
                         break;
                     }
-
-                    pegs[jump.Value.From] = false;
-                    pegs[jump.Value.Over] = false;
-                    pegs[jump.Value.To] = true;
 
                     GameInterface.PrintPegs(pegs);
                 }

@@ -74,7 +74,7 @@ namespace peggame
             return startingPeg;
         }
 
-        public override Jump? ChooseNextJump(Dictionary<char, bool> pegs)
+        public override bool PerformNextJump(Dictionary<char, bool> pegs)
         {
             var jumps = GameInterface.GetPossibleJumps(pegs);
             History.JumpRecord thisJump;
@@ -123,13 +123,14 @@ namespace peggame
             }
 
             currentPath.Add(thisJump);
+            GameInterface.PerformJump(pegs, thisJump.Jump);
 
-            return thisJump.Jump;
+            return true;
         }
 
         public override bool PlayAgain(Dictionary<char, bool> pegs) {
-            var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true);
-            var gameRecord = new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining);
+            var pegsRemaining = GameInterface.GetRemainingPegs(pegs);
+            var gameRecord = new History.GameRecord(currentPath, pegsRemaining);
 
             history[startingPeg.Value].Add(gameRecord);
 

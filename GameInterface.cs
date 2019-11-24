@@ -61,6 +61,16 @@ namespace peggame
             }
         }
 
+        public static void PerformJump(Dictionary<char, bool> pegs, Jump jump) {
+            pegs[jump.From] = false;
+            pegs[jump.Over] = false;
+            pegs[jump.To] = true;
+        }
+
+        public static char[] GetRemainingPegs(Dictionary<char, bool> pegs) {
+            return Array.FindAll(PegChars, peg => pegs[peg] == true);
+        }
+
         public static Jump[] GetPossibleJumps(Dictionary<char, bool> pegs) {
             var jumps = new Jump[] {
                 new Jump {From = '1', To = '4', Over = '2'},

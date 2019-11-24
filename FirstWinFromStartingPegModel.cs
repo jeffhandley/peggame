@@ -6,8 +6,8 @@ namespace peggame
     class FirstWinFromStartingPegModel : AllPathsFromStartingPegModel
     {
         public override bool PlayAgain(Dictionary<char, bool> pegs) {
-            var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true);
-            var gameRecord = new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining);
+            var pegsRemaining = GameInterface.GetRemainingPegs(pegs);
+            var gameRecord = new History.GameRecord(currentPath, pegsRemaining);
 
             history[startingPeg.Value].Add(gameRecord);
 

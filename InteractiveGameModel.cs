@@ -17,7 +17,7 @@ namespace peggame
             return peg;
         }
 
-        public virtual Jump? ChooseNextJump(Dictionary<char, bool> pegs)
+        public virtual bool PerformNextJump(Dictionary<char, bool> pegs)
         {
             var jumps = GameInterface.GetPossibleJumps(pegs);
             GameInterface.PrintJumps(jumps);
@@ -29,7 +29,7 @@ namespace peggame
             Console.WriteLine(from);
 
             if (from == null) {
-                return null;
+                return false;
             }
 
             Console.Write("Choose where to jump over: ");
@@ -42,16 +42,18 @@ namespace peggame
             if (over != null) {
                 foreach (var jump in jumps) {
                     if (jump.From == from && jump.Over == over) {
-                        return jump;
+                        GameInterface.PerformJump(pegs, jump);
+
+                        return true;
                     }
                 }
             }
 
-            return ChooseNextJump(pegs);
+            return PerformNextJump(pegs);
         }
 
         public virtual bool PlayAgain(Dictionary<char, bool> pegs) {
-            var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true).Length;
+            var pegsRemaining = GameInterface.GetRemainingPegs(pegs).Length;
 
             Console.WriteLine();
             Console.WriteLine($"Game Over. Pegs Remaining: {pegsRemaining}");
