@@ -29,9 +29,9 @@ namespace peggame.History
     {
         public char StartingPeg {get; set;}
         public JumpList JumpList {get; set;}
-        public int PegsRemaining {get; set;}
+        public char[] PegsRemaining {get; set;}
 
-        public GameRecord(char startingPeg, JumpList jumps, int pegsRemaining)
+        public GameRecord(char startingPeg, JumpList jumps, char[] pegsRemaining)
         {
             this.StartingPeg = startingPeg;
             this.JumpList = jumps;

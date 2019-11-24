@@ -39,7 +39,6 @@ namespace peggame
 
                 do {
                     model.PrintStats();
-                    GameInterface.PrintJumps(jumps);
 
                     if (Console.KeyAvailable == true) {
                         Console.WriteLine("Game paused. Press a key to continue.");

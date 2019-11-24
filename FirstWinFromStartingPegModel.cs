@@ -6,13 +6,13 @@ namespace peggame
     class FirstWinFromStartingPegModel : AllPathsFromStartingPegModel
     {
         public override bool PlayAgain(Dictionary<char, bool> pegs) {
-            var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true).Length;
+            var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true);
+            var gameRecord = new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining);
 
-            history[startingPeg.Value].Add(new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining));
+            history[startingPeg.Value].Add(gameRecord);
 
-            if (pegsRemaining == 1) {
-                wins[startingPeg.Value].Add(new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining));
-                Console.WriteLine("Game won!");
+            if (pegsRemaining.Length == 1) {
+                wins[startingPeg.Value].Add(gameRecord);
             }
 
             PrintStats();
@@ -44,12 +44,13 @@ namespace peggame
                 if (wins[peg].Count > 0) {
                     foreach (var jump in wins[peg][0].JumpList) {
                         Console.WriteLine($"Jumped {jump.From} over {jump.Over}.");
+                        Console.WriteLine();
                     }
                 } else {
                     Console.WriteLine("No wins");
+                    Console.WriteLine();
                 }
 
-                Console.WriteLine();
             }
 
             return false;

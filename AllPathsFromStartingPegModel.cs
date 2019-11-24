@@ -123,18 +123,16 @@ namespace peggame
 
             currentPath.Add(thisJump);
 
-            Console.WriteLine($"Jumping {thisJump.From} over {thisJump.Over}.");
-
             return thisJump.Jump;
         }
 
         public override bool PlayAgain(Dictionary<char, bool> pegs) {
-            var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true).Length;
+            var pegsRemaining = Array.FindAll(GameInterface.PegChars, p => pegs[p] == true);
             var gameRecord = new History.GameRecord(startingPeg.Value, currentPath, pegsRemaining);
 
             history[startingPeg.Value].Add(gameRecord);
 
-            if (pegsRemaining == 1) {
+            if (pegsRemaining.Length == 1) {
                 wins[startingPeg.Value].Add(gameRecord);
             }
 
@@ -158,8 +156,9 @@ namespace peggame
         }
 
         public override void PrintStats() {
-            Console.WriteLine();
-            Console.WriteLine("".PadRight(65) + (!quietOutput ? "Last Path:".PadRight(35) + "This Path:" : ""));
+            if (!quietOutput) {
+                Console.WriteLine("".PadRight(65) + "Last Path:".PadRight(35) + "This Path:");
+            }
 
             var pathLength = !quietOutput ? Math.Max(Math.Max(lastPath != null ? lastPath.Count : 0, currentPath.Count), history.Keys.Count) : history.Keys.Count;
             var pegStats = new List<string>();

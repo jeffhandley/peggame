@@ -19,6 +19,7 @@ namespace peggame
 
         public virtual Jump? ChooseNextJump(Jump[] jumps)
         {
+            GameInterface.PrintJumps(jumps);
             Console.Write("Choose where to jump from: ");
 
             Func<char, bool> CanJumpFrom = (char selectedPeg) => CanJump(jumps, selectedPeg);
