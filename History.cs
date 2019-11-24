@@ -27,13 +27,11 @@ namespace peggame.History
 
     class GameRecord
     {
-        public char StartingPeg {get; set;}
         public JumpList JumpList {get; set;}
         public char[] PegsRemaining {get; set;}
 
         public GameRecord(char startingPeg, JumpList jumps, char[] pegsRemaining)
         {
-            this.StartingPeg = startingPeg;
             this.JumpList = jumps;
             this.PegsRemaining = pegsRemaining;
         }

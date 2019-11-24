@@ -13,6 +13,8 @@ namespace peggame
                 model = new AllPathsFromStartingPegModel(args);
             } else if (Array.IndexOf(args, "-1") >= 0) {
                 model = new FirstWinFromStartingPegModel();
+            } else if (Array.IndexOf(args, "-p") >= 0) {
+                model = new AllPathsFromRemainingPegsModel();
             } else {
                 model = new InteractiveGameModel();
             }
