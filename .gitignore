@@ -1,3 +1,5 @@
 obj/
 bin/
 wins.json
+
+*.sublime-workspace
