@@ -40,8 +40,6 @@ namespace peggame
                 // Find the deepest jump that can be decremented
                 var decrementIndex = lastAttempt.JumpList.FindLastIndex(x => x.JumpIndex > 0);
 
-                Console.WriteLine($"Attempts: {attempts.Count}. Wins: {wins.Count}. Last Attempt: {lastAttempt.JumpList[0].JumpIndex}. Decrement Index: {decrementIndex}.");
-
                 if (decrementIndex == -1) {
                     // If no jumps can be decremented, then we have exhausted
                     // this scenario, so we abort.
@@ -53,11 +51,7 @@ namespace peggame
                     // A deeper jump will be decremented
                     jumpIndex = lastAttempt.JumpList[0].JumpIndex;
                 }
-            } else {
-                Console.WriteLine("Attempts: 0.");
             }
-
-            Console.WriteLine($"Choosing Jump Index: {jumpIndex}");
 
             var jump = jumps[jumpIndex];
             GameInterface.PerformJump(pegs, jump);
@@ -106,47 +100,55 @@ namespace peggame
         {
             var model = new InteractiveModel();
 
-            var pegs = GameInterface.InitializePegs();
-            GameInterface.PrintPegs(pegs);
+            Dictionary<char, bool> pegs;
 
-            if (!model.RemoveStartingPeg(pegs)) {
-                model.PrintStats();
-                return;
-            }
+            do
+            {
+                pegs = GameInterface.InitializePegs();
+                GameInterface.PrintPegs(pegs);
 
-            GameInterface.PrintPegs(pegs);
-
-            do {
-                model.PrintStats();
-
-                if (Console.KeyAvailable == true) {
-                    Console.WriteLine("Game paused. Press a key to continue.");
-
-                    while (Console.KeyAvailable) {
-                        Console.ReadKey(true);
-                    }
-
-                    var unpause = Console.ReadKey(true).Key;
-
-                    if (unpause == ConsoleKey.Escape) {
-                        return;
-                    }
-                }
-
-                var gameRecords = GetAllGameRecords(GameInterface.GetRemainingPegs(pegs));
-                var stats = GetGameStats(gameRecords);
-
-                foreach (var stat in stats.Keys) {
-                    Console.WriteLine($"{stat}: {stats[stat]}");
-                }
-
-                if (!model.PerformNextJump(pegs)) {
-                    break;
+                if (!model.RemoveStartingPeg(pegs)) {
+                    model.PrintStats();
+                    return;
                 }
 
                 GameInterface.PrintPegs(pegs);
+
+                do {
+                    model.PrintStats();
+
+                    if (Console.KeyAvailable == true) {
+                        Console.WriteLine("Game paused. Press a key to continue.");
+
+                        while (Console.KeyAvailable) {
+                            Console.ReadKey(true);
+                        }
+
+                        var unpause = Console.ReadKey(true).Key;
+
+                        if (unpause == ConsoleKey.Escape) {
+                            return;
+                        }
+                    }
+
+                    var gameRecords = GetAllGameRecords(GameInterface.GetRemainingPegs(pegs));
+                    var stats = GetGameStats(pegs, gameRecords);
+
+                    foreach (var stat in stats.Keys) {
+                        Console.WriteLine($"{stat}: {stats[stat]}");
+                    }
+
+                    Console.WriteLine();
+
+                    if (!model.PerformNextJump(pegs)) {
+                        break;
+                    }
+
+                    GameInterface.PrintPegs(pegs);
+                }
+                while (GameInterface.GetPossibleJumps(pegs).Length > 0);
             }
-            while (GameInterface.GetPossibleJumps(pegs).Length > 0);
+            while(model.PlayAgain(pegs));
         }
 
         public void PrintStats()
@@ -187,7 +189,7 @@ namespace peggame
             return records;
         }
 
-        public Dictionary<string, string> GetGameStats(List<GameRecord> gameRecords)
+        public Dictionary<string, string> GetGameStats(Dictionary<char, bool> pegs, List<GameRecord> gameRecords)
         {
             var stats = new Dictionary<string, string>();
 
@@ -197,12 +199,18 @@ namespace peggame
             stats.Add("Wins", wins.Count.ToString("N0"));
 
             if (wins.Count > 0) {
-                wins.Sort(delegate(GameRecord game1, GameRecord game2)
-                {
-                    return game1.JumpList[0].JumpIndex.CompareTo(game2.JumpList[0].JumpIndex);
-                });
+                var jumps = GameInterface.GetPossibleJumps(pegs);
+                var jumpOdds = wins.GroupBy(win => win.JumpList[0].JumpIndex).Select(x => new { JumpIndex = x.Key, Wins = x.Count() });
 
-                stats.Add("Best jump", $"From {wins[0].JumpList[0].From} over {wins[0].JumpList[0].Over}");
+                var winCounts = new Dictionary<int, int>();
+
+                foreach (var jump in jumpOdds) {
+                    winCounts.Add(jump.JumpIndex, jump.Wins);
+                }
+
+                for (var jumpIndex = 0; jumpIndex < jumps.Length; jumpIndex++) {
+                    stats.Add($"  {jumpIndex + 1}. From {jumps[jumpIndex].From} over {jumps[jumpIndex].Over}", winCounts.ContainsKey(jumpIndex) ? winCounts[jumpIndex].ToString("N0") : "0");
+                }
             }
 
             return stats;
