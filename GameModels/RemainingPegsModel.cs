@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using peggame.History;
 
 namespace peggame
@@ -90,9 +91,7 @@ namespace peggame
 
             if (!hasRemainingPaths) {
                 if (GameInterface.PegChars.Length <= startingPegIndex + 1) {
-
-                    var interactive = GameInterface.InitializePegs();
-
+                    ReplayGame();
 
                     return false;
                 }
@@ -103,17 +102,110 @@ namespace peggame
             return true;
         }
 
+        private void ReplayGame()
+        {
+            var model = new InteractiveModel();
+
+            var pegs = GameInterface.InitializePegs();
+            GameInterface.PrintPegs(pegs);
+
+            if (!model.RemoveStartingPeg(pegs)) {
+                model.PrintStats();
+                return;
+            }
+
+            GameInterface.PrintPegs(pegs);
+
+            do {
+                model.PrintStats();
+
+                if (Console.KeyAvailable == true) {
+                    Console.WriteLine("Game paused. Press a key to continue.");
+
+                    while (Console.KeyAvailable) {
+                        Console.ReadKey(true);
+                    }
+
+                    var unpause = Console.ReadKey(true).Key;
+
+                    if (unpause == ConsoleKey.Escape) {
+                        return;
+                    }
+                }
+
+                var gameRecords = GetAllGameRecords(GameInterface.GetRemainingPegs(pegs));
+                var stats = GetGameStats(gameRecords);
+
+                foreach (var stat in stats.Keys) {
+                    Console.WriteLine($"{stat}: {stats[stat]}");
+                }
+
+                if (!model.PerformNextJump(pegs)) {
+                    break;
+                }
+
+                GameInterface.PrintPegs(pegs);
+            }
+            while (GameInterface.GetPossibleJumps(pegs).Length > 0);
+        }
+
         public void PrintStats()
         {
+            var output = new System.Text.StringBuilder();
+
             foreach (var peg in GameInterface.PegChars) {
                 var remainingPegs = new String(Array.FindAll(GameInterface.PegChars, x => x != peg));
 
                 if (history.ContainsKey(remainingPegs)) {
-                    Console.WriteLine($"Starting Peg: {peg}. Games: {history[remainingPegs].Count.ToString("N0")}.");
+                    output.Append($"Starting Peg: {peg}. Games: {history[remainingPegs].Count.ToString("N0")}.\n");
                 }
             }
 
-            Console.WriteLine($"Unique Setups: {history.Keys.Count.ToString("N0")}.");
+            output.Append($"\nUnique Setups: {history.Keys.Count.ToString("N0")}.\n");
+        }
+
+        public List<GameRecord> GetAllGameRecords(char[] remainingPegs)
+        {
+            var records = new List<GameRecord>();
+
+            foreach (var gameRecord in history[new String(remainingPegs)]) {
+                if (history.ContainsKey(new String(gameRecord.PegsRemaining))) {
+                    var childRecords = GetAllGameRecords(gameRecord.PegsRemaining);
+
+                    foreach (var child in childRecords) {
+                        var mergedJumps = new JumpList();
+                        mergedJumps.AddRange(gameRecord.JumpList);
+                        mergedJumps.AddRange(child.JumpList);
+
+                        records.Add(new GameRecord(mergedJumps, child.PegsRemaining));
+                    }
+                } else {
+                    records.Add(gameRecord);
+                }
+            }
+
+            return records;
+        }
+
+        public Dictionary<string, string> GetGameStats(List<GameRecord> gameRecords)
+        {
+            var stats = new Dictionary<string, string>();
+
+            stats.Add("Possibilities", gameRecords.Count.ToString("N0"));
+
+            var wins = gameRecords.FindAll(x => x.PegsRemaining.Length == 1);
+            stats.Add("Wins", wins.Count.ToString("N0"));
+
+            if (wins.Count > 0) {
+                wins.Sort(delegate(GameRecord game1, GameRecord game2)
+                {
+                    return game1.JumpList[0].JumpIndex.CompareTo(game2.JumpList[0].JumpIndex);
+                });
+
+                stats.Add("Best jump", $"From {wins[0].JumpList[0].From} over {wins[0].JumpList[0].Over}");
+            }
+
+            return stats;
         }
     }
 }
