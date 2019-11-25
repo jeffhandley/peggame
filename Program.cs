@@ -10,13 +10,13 @@ namespace peggame
             IGameModel model;
 
             if (Array.IndexOf(args, "-paths") >= 0) {
-                model = new AllPathsFromStartingPegModel(args);
+                model = new AllPathsModel(args);
             } else if (Array.IndexOf(args, "-first") >= 0) {
-                model = new FirstWinFromStartingPegModel();
+                model = new FirstWinFromAllPathsModel();
             } else if (Array.IndexOf(args, "-pegs") >= 0) {
-                model = new AllPathsFromRemainingPegsModel();
+                model = new RemainingPegsModel();
             } else {
-                model = new InteractiveGameModel();
+                model = new InteractiveModel();
             }
 
             Dictionary<char, bool> pegs;

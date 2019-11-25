@@ -4,7 +4,7 @@ using peggame.History;
 
 namespace peggame
 {
-    class AllPathsFromRemainingPegsModel : IGameModel
+    class RemainingPegsModel : IGameModel
     {
         int startingPegIndex = 0;
         Dictionary<string, List<GameRecord>> history = new Dictionary<string, List<GameRecord>>();

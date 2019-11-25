@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace peggame
 {
-    class AllPathsFromStartingPegModel : InteractiveGameModel
+    class AllPathsModel : IGameModel
     {
         protected Dictionary<char, List<History.GameRecord>> history;
         protected int nextStartingPeg = 0;
@@ -15,13 +15,13 @@ namespace peggame
         private int? maxAttemptsPerPeg;
         private bool quietOutput = false;
 
-        public AllPathsFromStartingPegModel()
+        public AllPathsModel()
         {
             history = new Dictionary<char, List<History.GameRecord>>();
             wins = new Dictionary<char, List<History.GameRecord>>();
         }
 
-        public AllPathsFromStartingPegModel(string[] args) : this()
+        public AllPathsModel(string[] args) : this()
         {
             var maxArg = Array.IndexOf(args, "-m");
 
@@ -52,7 +52,7 @@ namespace peggame
             }
         }
 
-        public override bool RemoveStartingPeg(Dictionary<char, bool> pegs)
+        public virtual bool RemoveStartingPeg(Dictionary<char, bool> pegs)
         {
             startingPeg = nextStartingPeg < GameInterface.PegChars.Length ? GameInterface.PegChars[nextStartingPeg] : (char?)null;
 
@@ -78,7 +78,7 @@ namespace peggame
             return false;
         }
 
-        public override bool PerformNextJump(Dictionary<char, bool> pegs)
+        public virtual bool PerformNextJump(Dictionary<char, bool> pegs)
         {
             var jumps = GameInterface.GetPossibleJumps(pegs);
             History.JumpRecord thisJump;
@@ -132,7 +132,7 @@ namespace peggame
             return true;
         }
 
-        public override bool PlayAgain(Dictionary<char, bool> pegs) {
+        public virtual bool PlayAgain(Dictionary<char, bool> pegs) {
             var pegsRemaining = GameInterface.GetRemainingPegs(pegs);
             var gameRecord = new History.GameRecord(currentPath, pegsRemaining);
 
@@ -161,7 +161,7 @@ namespace peggame
             return Math.Min(GameInterface.PegChars.Length, lastStartingPeg + 1) > nextStartingPeg;
         }
 
-        public override void PrintStats() {
+        public virtual void PrintStats() {
             if (!quietOutput) {
                 Console.WriteLine("".PadRight(65) + "Last Path:".PadRight(35) + "This Path:");
             }

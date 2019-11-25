@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace peggame
 {
-    class FirstWinFromStartingPegModel : AllPathsFromStartingPegModel
+    class FirstWinFromAllPathsModel : AllPathsModel
     {
         public override bool PlayAgain(Dictionary<char, bool> pegs) {
             var pegsRemaining = GameInterface.GetRemainingPegs(pegs);

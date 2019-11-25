@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace peggame
 {
-    class InteractiveGameModel : IGameModel
+    class InteractiveModel : IGameModel
     {
         public virtual bool RemoveStartingPeg(Dictionary<char, bool> pegs)
         {
