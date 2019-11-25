@@ -26,24 +26,28 @@ namespace peggame
         }
 
         public static void PrintPegs(Dictionary<char, bool> pegs) {
+            var output = new System.Text.StringBuilder();
+
             Console.Clear();
-            Console.WriteLine("             {0}    ", ShowPeg(pegs, 0));
-            Console.WriteLine("            {0} {1}   ", ShowPeg(pegs, 1), ShowPeg(pegs, 2));
-            Console.WriteLine("           {0} {1} {2}  ", ShowPeg(pegs, 3), ShowPeg(pegs, 4), ShowPeg(pegs, 5));
-            Console.WriteLine("          {0} {1} {2} {3} ", ShowPeg(pegs, 6), ShowPeg(pegs, 7), ShowPeg(pegs, 8), ShowPeg(pegs, 9));
-            Console.WriteLine("         {0} {1} {2} {3} {4}", ShowPeg(pegs, 10), ShowPeg(pegs, 11), ShowPeg(pegs, 12), ShowPeg(pegs, 13), ShowPeg(pegs, 14));
-            Console.WriteLine();
+            output.AppendFormat("             {0}    \n", ShowPeg(pegs, 0));
+            output.AppendFormat("            {0} {1}   \n", ShowPeg(pegs, 1), ShowPeg(pegs, 2));
+            output.AppendFormat("           {0} {1} {2}  \n", ShowPeg(pegs, 3), ShowPeg(pegs, 4), ShowPeg(pegs, 5));
+            output.AppendFormat("          {0} {1} {2} {3} \n", ShowPeg(pegs, 6), ShowPeg(pegs, 7), ShowPeg(pegs, 8), ShowPeg(pegs, 9));
+            output.AppendFormat("         {0} {1} {2} {3} {4}\n", ShowPeg(pegs, 10), ShowPeg(pegs, 11), ShowPeg(pegs, 12), ShowPeg(pegs, 13), ShowPeg(pegs, 14));
+            Console.WriteLine(output);
         }
 
         public static void PrintJumps(Jump[] jumps) {
-            Console.WriteLine("Possible Jumps:");
+            var output = new System.Text.StringBuilder();
+
+            output.Append("Possible Jumps:\n");
 
             for (var j = 0; j < jumps.Length; j++) {
                 var jump = jumps[j];
-                Console.WriteLine($"  {j + 1}. Jump {jump.From} over {jump.Over}.");
+                output.Append($"  {j + 1}. Jump {jump.From} over {jump.Over}.\n");
             }
 
-            Console.WriteLine();
+            Console.WriteLine(output);
         }
 
         static char ShowPeg(Dictionary<char, bool> pegs, int index) {
@@ -55,20 +59,6 @@ namespace peggame
             }
 
             return '∘';
-        }
-
-        public static void WriteWins(Dictionary<char, List<History.GameRecord>> wins)
-        {
-            var options = new System.Text.Json.JsonSerializerOptions
-            {
-                WriteIndented = true
-            };
-
-            foreach (var peg in wins.Keys)
-            {
-                string winsJson = System.Text.Json.JsonSerializer.Serialize(wins[peg], options);
-                System.IO.File.WriteAllText($"wins-{peg}.json", winsJson);
-            }
         }
 
         public static void RemovePeg(Dictionary<char, bool> pegs, char peg) {

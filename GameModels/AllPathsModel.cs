@@ -155,15 +155,16 @@ namespace peggame
             if (!hasMoreMoves || (maxAttemptsPerPeg.HasValue && history[startingPeg.Value].Count >= maxAttemptsPerPeg.Value)) {
                 nextStartingPeg++;
                 lastPath = null;
-                GameInterface.WriteWins(wins);
             }
 
             return Math.Min(GameInterface.PegChars.Length, lastStartingPeg + 1) > nextStartingPeg;
         }
 
         public virtual void PrintStats() {
+            var output = new System.Text.StringBuilder();
+
             if (!quietOutput) {
-                Console.WriteLine("".PadRight(65) + "Last Path:".PadRight(35) + "This Path:");
+                output.Append("".PadRight(65) + "Last Path:".PadRight(35) + "This Path:" + "\n");
             }
 
             var pathLength = !quietOutput ? Math.Max(Math.Max(lastPath != null ? lastPath.Count : 0, currentPath.Count), history.Keys.Count) : history.Keys.Count;
@@ -180,13 +181,14 @@ namespace peggame
                 var currentJump = !quietOutput && currentPath.Count > i ? $"Jumped {currentPath[i].From} over {currentPath[i].Over}. Jump index: {currentPath[i].JumpIndex}." : "";
 
                 if (quietOutput) {
-                    Console.WriteLine(pegStat);
+                    output.Append(pegStat + "\n");
                 } else {
-                    Console.WriteLine(pegStat.PadRight(65) + lastJump.PadRight(35) + currentJump);
+                    output.Append(pegStat.PadRight(65) + lastJump.PadRight(35) + currentJump + "\n");
                 }
             }
 
-            Console.WriteLine();
+            output.Append("\n");
+            Console.WriteLine(output);
         }
 
         static bool PathsEqual(History.JumpList pastPath, History.JumpList currentPath) {

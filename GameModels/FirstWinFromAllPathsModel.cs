@@ -28,30 +28,32 @@ namespace peggame
             if (!hasMoreMoves || wins[startingPeg.Value].Count >= 1) {
                 nextStartingPeg++;
                 lastPath = null;
-                GameInterface.WriteWins(wins);
             }
 
             if (GameInterface.PegChars.Length > nextStartingPeg) {
                 return true;
             }
 
-            Console.WriteLine("Wins:");
+            var output = new System.Text.StringBuilder();
+
+            output.Append("Wins:\n");
 
             foreach (var peg in wins.Keys) {
-                Console.WriteLine($"Starting Peg: {peg}");
-                Console.WriteLine();
+                output.Append($"Starting Peg: {peg}\n\n");
 
                 if (wins[peg].Count > 0) {
                     foreach (var jump in wins[peg][0].JumpList) {
-                        Console.WriteLine($"Jumped {jump.From} over {jump.Over}.");
-                        Console.WriteLine();
+                        output.Append($"  Jumped {jump.From} over {jump.Over}.\n");
                     }
+
+                    output.Append("\n");
                 } else {
-                    Console.WriteLine("No wins");
-                    Console.WriteLine();
+                    output.Append("No wins\n\n");
                 }
 
             }
+
+            Console.WriteLine(output);
 
             return false;
         }
