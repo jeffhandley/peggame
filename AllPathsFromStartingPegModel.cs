@@ -52,7 +52,7 @@ namespace peggame
             }
         }
 
-        public override char? ChooseStartingPeg()
+        public override bool RemoveStartingPeg(Dictionary<char, bool> pegs)
         {
             startingPeg = nextStartingPeg < GameInterface.PegChars.Length ? GameInterface.PegChars[nextStartingPeg] : (char?)null;
 
@@ -66,12 +66,16 @@ namespace peggame
                     var paths = history[startingPeg.Value];
                     lastPath = paths.Count > 0 ? paths[paths.Count - 1].JumpList : (History.JumpList)null;
                 }
-            } else {
-                currentPath = (History.JumpList)null;
-                lastPath = (History.JumpList)null;
+
+                GameInterface.RemovePeg(pegs, startingPeg.Value);
+
+                return true;
             }
 
-            return startingPeg;
+            currentPath = (History.JumpList)null;
+            lastPath = (History.JumpList)null;
+
+            return false;
         }
 
         public override bool PerformNextJump(Dictionary<char, bool> pegs)

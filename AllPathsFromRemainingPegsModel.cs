@@ -10,29 +10,14 @@ namespace peggame
         Dictionary<string, List<GameRecord>> history = new Dictionary<string, List<GameRecord>>();
         List<(string Pegs, GameRecord GameRecord)> activeGameRecords;
 
-        public char? ChooseStartingPeg()
+        public bool RemoveStartingPeg(Dictionary<char, bool> pegs)
         {
-            var remainingPegs = new String(Array.FindAll(GameInterface.PegChars, peg => peg != GameInterface.PegChars[startingPegIndex]));
-
-            if (history.ContainsKey(remainingPegs)) {
-                var attempts = history[remainingPegs];
-                var lastAttempt = attempts[attempts.Count - 1];
-
-                bool hasRemainingPaths = lastAttempt.JumpList.Exists(x => x.JumpIndex > 0);
-
-                if (!hasRemainingPaths) {
-                    if (GameInterface.PegChars.Length <= startingPegIndex + 1) {
-                        return null;
-                    }
-
-                    startingPegIndex++;
-                }
-            }
-
             // Create a new set of active game records
             activeGameRecords = new List<(string Pegs, GameRecord GameRecord)>();
 
-            return GameInterface.PegChars[startingPegIndex];
+            GameInterface.RemovePeg(pegs, GameInterface.PegChars[startingPegIndex]);
+
+            return true;
         }
 
         public bool PerformNextJump(Dictionary<char, bool> pegs)
@@ -95,6 +80,24 @@ namespace peggame
                 }
 
                 history[record.Pegs].Add(record.GameRecord);
+            }
+
+            var remainingPegs = new String(Array.FindAll(GameInterface.PegChars, peg => peg != GameInterface.PegChars[startingPegIndex]));
+            var attempts = history[remainingPegs];
+            var lastAttempt = attempts[attempts.Count - 1];
+
+            bool hasRemainingPaths = lastAttempt.JumpList.Exists(x => x.JumpIndex > 0);
+
+            if (!hasRemainingPaths) {
+                if (GameInterface.PegChars.Length <= startingPegIndex + 1) {
+
+                    var interactive = GameInterface.InitializePegs();
+
+
+                    return false;
+                }
+
+                startingPegIndex++;
             }
 
             return true;

@@ -5,7 +5,7 @@ namespace peggame
 {
     interface IGameModel
     {
-        char? ChooseStartingPeg();
+        bool RemoveStartingPeg(Dictionary<char, bool> pegs);
         bool PerformNextJump(Dictionary<char, bool> pegs);
         bool PlayAgain(Dictionary<char, bool> pegs);
         void PrintStats();

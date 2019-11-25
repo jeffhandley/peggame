@@ -15,6 +15,16 @@ namespace peggame
             new char[] {'E', 'D', '0', 'C', '9', '6', 'B', '8', '5', '3', 'A', '7', '4', '2', '1'}
         };
 
+        public static Dictionary<char, bool> InitializePegs() {
+            var pegs = new Dictionary<char, bool>();
+
+            for (var i = 0; i < GameInterface.PegChars.Length; i++) {
+                pegs[GameInterface.PegChars[i]] = true;
+            }
+
+            return pegs;
+        }
+
         public static void PrintPegs(Dictionary<char, bool> pegs) {
             Console.Clear();
             Console.WriteLine("             {0}    ", ShowPeg(pegs, 0));
@@ -61,10 +71,18 @@ namespace peggame
             }
         }
 
+        public static void RemovePeg(Dictionary<char, bool> pegs, char peg) {
+            pegs[peg] = false;
+        }
+
+        public static void PlacePeg(Dictionary<char, bool> pegs, char peg) {
+            pegs[peg] = true;
+        }
+
         public static void PerformJump(Dictionary<char, bool> pegs, Jump jump) {
-            pegs[jump.From] = false;
-            pegs[jump.Over] = false;
-            pegs[jump.To] = true;
+            RemovePeg(pegs, jump.From);
+            PlacePeg(pegs, jump.To);
+            RemovePeg(pegs, jump.Over);
         }
 
         public static char[] GetRemainingPegs(Dictionary<char, bool> pegs) {

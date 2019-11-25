@@ -22,19 +22,13 @@ namespace peggame
             Dictionary<char, bool> pegs;
 
             do {
-                pegs = new Dictionary<char, bool>();
-
-                InitializePegs(pegs);
+                pegs = GameInterface.InitializePegs();
                 GameInterface.PrintPegs(pegs);
 
-                var peg = model.ChooseStartingPeg();
-
-                if (peg == null) {
+                if (!model.RemoveStartingPeg(pegs)) {
                     model.PrintStats();
                     return;
                 }
-
-                pegs[peg.Value] = false;
 
                 GameInterface.PrintPegs(pegs);
 
@@ -64,12 +58,6 @@ namespace peggame
                 while (GameInterface.GetPossibleJumps(pegs).Length > 0);
             }
             while (model.PlayAgain(pegs));
-        }
-
-        static void InitializePegs(Dictionary<char, bool> pegs) {
-            for (var i = 0; i < GameInterface.PegChars.Length; i++) {
-                pegs[GameInterface.PegChars[i]] = true;
-            }
         }
     }
 }

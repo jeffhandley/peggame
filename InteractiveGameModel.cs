@@ -5,7 +5,7 @@ namespace peggame
 {
     class InteractiveGameModel : IGameModel
     {
-        public virtual char? ChooseStartingPeg()
+        public virtual bool RemoveStartingPeg(Dictionary<char, bool> pegs)
         {
             Func<char, bool> HasPeg = (char selectedPeg) => Array.IndexOf(GameInterface.PegChars, selectedPeg) >= 0;
 
@@ -14,7 +14,11 @@ namespace peggame
             var peg = ReadPeg(HasPeg);
             Console.WriteLine(peg);
 
-            return peg;
+            if (peg.HasValue) {
+                GameInterface.RemovePeg(pegs, peg.Value);
+            }
+
+            return peg.HasValue;
         }
 
         public virtual bool PerformNextJump(Dictionary<char, bool> pegs)
