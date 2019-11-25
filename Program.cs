@@ -27,9 +27,10 @@ namespace peggame
                 InitializePegs(pegs);
                 GameInterface.PrintPegs(pegs);
 
-                var peg = model.ChooseStartingPeg(pegs);
+                var peg = model.ChooseStartingPeg();
 
                 if (peg == null) {
+                    model.PrintStats();
                     return;
                 }
 

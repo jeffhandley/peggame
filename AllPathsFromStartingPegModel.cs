@@ -52,7 +52,7 @@ namespace peggame
             }
         }
 
-        public override char? ChooseStartingPeg(Dictionary<char, bool> pegs)
+        public override char? ChooseStartingPeg()
         {
             startingPeg = nextStartingPeg < GameInterface.PegChars.Length ? GameInterface.PegChars[nextStartingPeg] : (char?)null;
 
