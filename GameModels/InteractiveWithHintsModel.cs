@@ -5,11 +5,12 @@ using peggame.History;
 
 namespace peggame
 {
-    class RemainingPegsModel : IGameModel
+    class InteractiveWithHintsModel : IGameModel
     {
         int startingPegIndex = 0;
         Dictionary<string, List<GameRecord>> history = new Dictionary<string, List<GameRecord>>();
         List<(string Pegs, GameRecord GameRecord)> activeGameRecords;
+        Dictionary<string, List<GameRecord>> allGameRecords = new Dictionary<string, List<GameRecord>>();
 
         public bool RemoveStartingPeg(Dictionary<char, bool> pegs)
         {
@@ -29,8 +30,7 @@ namespace peggame
             // We start by choosing the last possible jump
             var jumpIndex = jumps.Length - 1;
 
-            Console.WriteLine($"Starting Peg: {GameInterface.PegChars[startingPegIndex]}.");
-            Console.WriteLine($"Pegs Remaining: {new String(remainingPegsBefore)}");
+            Console.WriteLine($"Calculating statistics... Starting peg: {GameInterface.PegChars[startingPegIndex]}");
 
             if (history.ContainsKey(remainingPegsBefore)) {
                 var attempts = history[remainingPegsBefore];
@@ -131,16 +131,9 @@ namespace peggame
                         }
                     }
 
-                    var gameRecords = GetAllGameRecords(GameInterface.GetRemainingPegs(pegs));
-                    var stats = GetGameStats(pegs, gameRecords);
-
-                    foreach (var stat in stats.Keys) {
-                        Console.WriteLine($"{stat}: {stats[stat]}");
-                    }
-
                     Console.WriteLine();
 
-                    if (!model.PerformNextJump(pegs)) {
+                    if (!PerformNextInteractiveJump(pegs, false)) {
                         break;
                     }
 
@@ -168,22 +161,28 @@ namespace peggame
 
         public List<GameRecord> GetAllGameRecords(char[] remainingPegs)
         {
-            var records = new List<GameRecord>();
+            List<GameRecord> records;
 
-            foreach (var gameRecord in history[new String(remainingPegs)]) {
-                if (history.ContainsKey(new String(gameRecord.PegsRemaining))) {
-                    var childRecords = GetAllGameRecords(gameRecord.PegsRemaining);
+            if (!allGameRecords.TryGetValue(new String(remainingPegs), out records)) {
+                records = new List<GameRecord>();
 
-                    foreach (var child in childRecords) {
-                        var mergedJumps = new JumpList();
-                        mergedJumps.AddRange(gameRecord.JumpList);
-                        mergedJumps.AddRange(child.JumpList);
+                foreach (var gameRecord in history[new String(remainingPegs)]) {
+                    if (history.ContainsKey(new String(gameRecord.PegsRemaining))) {
+                        var childRecords = GetAllGameRecords(gameRecord.PegsRemaining);
 
-                        records.Add(new GameRecord(mergedJumps, child.PegsRemaining));
+                        foreach (var child in childRecords) {
+                            var mergedJumps = new JumpList();
+                            mergedJumps.AddRange(gameRecord.JumpList);
+                            mergedJumps.AddRange(child.JumpList);
+
+                            records.Add(new GameRecord(mergedJumps, child.PegsRemaining));
+                        }
+                    } else {
+                        records.Add(gameRecord);
                     }
-                } else {
-                    records.Add(gameRecord);
                 }
+
+                allGameRecords.Add(new String(remainingPegs), records);
             }
 
             return records;
@@ -192,28 +191,110 @@ namespace peggame
         public Dictionary<string, string> GetGameStats(Dictionary<char, bool> pegs, List<GameRecord> gameRecords)
         {
             var stats = new Dictionary<string, string>();
-
-            stats.Add("Possibilities", gameRecords.Count.ToString("N0"));
-
+            var jumps = GameInterface.GetPossibleJumps(pegs);
             var wins = gameRecords.FindAll(x => x.PegsRemaining.Length == 1);
-            stats.Add("Wins", wins.Count.ToString("N0"));
+            var winPercent = (decimal)wins.Count / (decimal)gameRecords.Count;
 
-            if (wins.Count > 0) {
-                var jumps = GameInterface.GetPossibleJumps(pegs);
-                var jumpOdds = wins.GroupBy(win => win.JumpList[0].JumpIndex).Select(x => new { JumpIndex = x.Key, Wins = x.Count() });
+            stats.Add("Possible Jumps", $"    Possibilities: {gameRecords.Count.ToString("N0").PadLeft(7)} - Wins: {wins.Count.ToString("N0").PadLeft(6)} ({winPercent.ToString("P0")})");
 
-                var winCounts = new Dictionary<int, int>();
+            for (var jumpIndex = 0; jumpIndex < jumps.Length; jumpIndex++) {
+                var jumpPossibilities = gameRecords.FindAll(x => x.JumpList[0].JumpIndex == jumpIndex);
+                var jumpWins = jumpPossibilities.FindAll(x => x.PegsRemaining.Length == 1);
+                var jumpWinPercent = (decimal)jumpWins.Count / (decimal)jumpPossibilities.Count;
 
-                foreach (var jump in jumpOdds) {
-                    winCounts.Add(jump.JumpIndex, jump.Wins);
-                }
-
-                for (var jumpIndex = 0; jumpIndex < jumps.Length; jumpIndex++) {
-                    stats.Add($"  {jumpIndex + 1}. From {jumps[jumpIndex].From} over {jumps[jumpIndex].Over}", winCounts.ContainsKey(jumpIndex) ? winCounts[jumpIndex].ToString("N0") : "0");
-                }
+                stats.Add($"  {jumpIndex + 1}. From {jumps[jumpIndex].From} over {jumps[jumpIndex].Over}", $"Possibilities: {jumpPossibilities.Count.ToString("N0").PadLeft(7)} - Wins: {jumpWins.Count.ToString("N0").PadLeft(6)} ({jumpWinPercent.ToString("P0")})");
             }
 
             return stats;
+        }
+
+        private bool PerformNextInteractiveJump(Dictionary<char, bool> pegs, bool showHints)
+        {
+            var jumps = GameInterface.GetPossibleJumps(pegs);
+
+            if (showHints) {
+                var gameRecords = GetAllGameRecords(GameInterface.GetRemainingPegs(pegs));
+                var stats = GetGameStats(pegs, gameRecords);
+
+                Console.WriteLine();
+
+                foreach (var stat in stats.Keys) {
+                    Console.WriteLine($"{stat}: {stats[stat]}");
+                }
+
+                Console.WriteLine();
+                Console.Write("Choose the peg to jump with: ");
+            } else {
+                GameInterface.PrintJumps(jumps);
+                Console.Write("Choose the peg to jump with (press 'H' for hints): ");
+            }
+
+            Func<char, bool> CanJumpFrom = (char selectedPeg) => CanJump(jumps, selectedPeg);
+
+            var from = ReadPeg(CanJumpFrom);
+            Console.WriteLine(from);
+
+            if (from == null) {
+                return false;
+            }
+
+            if (from == 'H') {
+                GameInterface.PrintPegs(pegs);
+
+                return PerformNextInteractiveJump(pegs, true);
+            }
+
+            if (showHints) {
+                Console.Write("Choose the peg to jump over (press 'H' for hints): ");
+            } else {
+                Console.Write("Choose the peg to jump over: ");
+            }
+
+            Func<char, bool> CanJumpTo = (char selectedPeg) => CanJump(jumps, from.Value, selectedPeg);
+
+            var over = ReadPeg(CanJumpTo);
+            Console.WriteLine(over);
+
+            if (over == 'H') {
+                GameInterface.PrintPegs(pegs);
+
+                return PerformNextInteractiveJump(pegs, true);
+            } else if (over != null) {
+                foreach (var jump in jumps) {
+                    if (jump.From == from && jump.Over == over) {
+                        GameInterface.PerformJump(pegs, jump);
+
+                        return true;
+                    }
+                }
+            }
+
+            return PerformNextJump(pegs);
+        }
+
+        static bool CanJump(Jump[] jumps, char from, char? over = (char?)null) {
+            foreach (var jump in jumps) {
+                if (jump.From == from && (over == null || jump.Over == over.Value)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        static char? ReadPeg(Func<char, bool> isAllowed) {
+            while (true) {
+                var key = Console.ReadKey(true);
+                var keyChar = Char.ToUpper(key.KeyChar);
+
+                if (Array.IndexOf(GameInterface.PegChars, keyChar) > -1 && isAllowed(keyChar) == true) {
+                    return keyChar;
+                } else if (key.Key == ConsoleKey.Escape) {
+                    return null;
+                } else if (Char.ToUpper(key.KeyChar) == 'H') {
+                    return 'H';
+                }
+            }
         }
     }
 }

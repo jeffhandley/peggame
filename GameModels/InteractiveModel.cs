@@ -25,7 +25,7 @@ namespace peggame
         {
             var jumps = GameInterface.GetPossibleJumps(pegs);
             GameInterface.PrintJumps(jumps);
-            Console.Write("Choose where to jump from: ");
+            Console.Write("Choose the peg to jump with: ");
 
             Func<char, bool> CanJumpFrom = (char selectedPeg) => CanJump(jumps, selectedPeg);
 
@@ -36,7 +36,7 @@ namespace peggame
                 return false;
             }
 
-            Console.Write("Choose where to jump over: ");
+            Console.Write("Choose the peg to jump over: ");
 
             Func<char, bool> CanJumpTo = (char selectedPeg) => CanJump(jumps, from.Value, selectedPeg);
 
