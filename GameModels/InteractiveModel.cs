@@ -24,8 +24,17 @@ namespace peggame
         public virtual bool PerformNextJump(Dictionary<char, bool> pegs)
         {
             var jumps = GameInterface.GetPossibleJumps(pegs);
-            GameInterface.PrintJumps(jumps);
             Console.Write("Choose the peg to jump with: ");
+
+            var left = Console.CursorLeft;
+            var top = Console.CursorTop;
+
+            Console.WriteLine();
+            Console.WriteLine();
+            Console.WriteLine();
+            GameInterface.PrintJumps(jumps);
+
+            Console.SetCursorPosition(left, top);
 
             Func<char, bool> CanJumpFrom = (char selectedPeg) => CanJump(jumps, selectedPeg);
 
@@ -33,6 +42,8 @@ namespace peggame
             Console.WriteLine(from);
 
             if (from == null) {
+                GameInterface.PrintPegs(pegs);
+
                 return false;
             }
 
@@ -53,15 +64,22 @@ namespace peggame
                 }
             }
 
+            GameInterface.PrintPegs(pegs);
+
+            // Over selection was aborted, ask for the From selection again
             return PerformNextJump(pegs);
         }
 
         public virtual bool PlayAgain(Dictionary<char, bool> pegs) {
             var pegsRemaining = GameInterface.GetRemainingPegs(pegs).Length;
 
-            Console.WriteLine();
-            Console.WriteLine($"Game Over. Pegs Remaining: {pegsRemaining}");
+            if (pegsRemaining == 1) {
+                Console.WriteLine("You won!");
+            } else {
+                Console.WriteLine($"Game Over. Pegs Remaining: {pegsRemaining}");
+            }
 
+            Console.WriteLine();
             Console.Write("Play Again? [y/n] ");
 
             while (true) {

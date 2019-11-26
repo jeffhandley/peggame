@@ -118,6 +118,13 @@ namespace peggame
             while(FinishSimulation(pegs));
         }
 
+        public List<GameRecord> GetAllGameRecords(Dictionary<char, bool> pegs)
+        {
+            var remainingPegs = GameInterface.GetRemainingPegs(pegs);
+
+            return GetAllGameRecords(pegs, remainingPegs);
+        }
+
         public List<GameRecord> GetAllGameRecords(Dictionary<char, bool> pegs, char[] pegsForRecords)
         {
             List<GameRecord> records;
@@ -154,24 +161,50 @@ namespace peggame
             return records;
         }
 
-        public Dictionary<string, string> GetGameStats(Dictionary<char, bool> pegs, List<GameRecord> gameRecords)
+        class Hints
         {
-            var stats = new Dictionary<string, string>();
+            public int Possibilities {get;set;}
+            public int Wins {get;set;}
+
+            public decimal WinRate {
+                get {
+                    return (decimal)Wins / (decimal)Possibilities;
+                }
+            }
+        }
+
+        class GameHints : Hints
+        {
+            public Dictionary<int, Hints> JumpHints {get;set;}
+
+            public GameHints()
+            {
+                JumpHints = new Dictionary<int, Hints>();
+            }
+        }
+
+        private GameHints GetHints(Dictionary<char, bool> pegs)
+        {
+            var hints = new GameHints();
+
+            var gameRecords = GetAllGameRecords(pegs);
             var jumps = GameInterface.GetPossibleJumps(pegs);
             var wins = gameRecords.FindAll(x => x.PegsRemaining.Length == 1);
-            var winPercent = (decimal)wins.Count / (decimal)gameRecords.Count;
 
-            stats.Add("Possible Jumps", $"    Possibilities: {gameRecords.Count.ToString("N0").PadLeft(7)} - Wins: {wins.Count.ToString("N0").PadLeft(6)} ({winPercent.ToString("P0")})");
+            hints.Possibilities = gameRecords.Count;
+            hints.Wins = wins.Count;
 
             for (var jumpIndex = 0; jumpIndex < jumps.Length; jumpIndex++) {
                 var jumpPossibilities = gameRecords.FindAll(x => x.JumpList[0].JumpIndex == jumpIndex);
-                var jumpWins = jumpPossibilities.FindAll(x => x.PegsRemaining.Length == 1);
-                var jumpWinPercent = (decimal)jumpWins.Count / (decimal)jumpPossibilities.Count;
 
-                stats.Add($"  {jumpIndex + 1}. Jump {jumps[jumpIndex].From} over {jumps[jumpIndex].Over}", $"Possibilities: {jumpPossibilities.Count.ToString("N0").PadLeft(7)} - Wins: {jumpWins.Count.ToString("N0").PadLeft(6)} ({jumpWinPercent.ToString("P0")})");
+                var jumpHints = new Hints();
+                jumpHints.Possibilities = jumpPossibilities.Count;
+                jumpHints.Wins = jumpPossibilities.FindAll(x => x.PegsRemaining.Length == 1).Count;
+
+                hints.JumpHints.Add(jumpIndex, jumpHints);
             }
 
-            return stats;
+            return hints;
         }
 
         public override bool PerformNextJump(Dictionary<char, bool> pegs)
@@ -184,20 +217,42 @@ namespace peggame
             var jumps = GameInterface.GetPossibleJumps(pegs);
 
             if (showHints) {
-                var gameRecords = GetAllGameRecords(pegs, GameInterface.GetRemainingPegs(pegs));
-                var stats = GetGameStats(pegs, gameRecords);
+                var hints = GetHints(pegs);
 
-                foreach (var stat in stats.Keys) {
-                    Console.WriteLine($"{stat}: {stats[stat]}");
+                Console.Write("Choose the peg to jump with: ");
+
+                var left = Console.CursorLeft;
+                var top = Console.CursorTop;
+
+                Console.WriteLine();
+                Console.WriteLine();
+                Console.WriteLine();
+
+                var output = new System.Text.StringBuilder();
+
+                output.Append($"Possible Jumps:   (Possibilities: {hints.Possibilities.ToString("N0").PadLeft(7)} - Wins: {hints.Wins.ToString("N0").PadLeft(6)} - Win Rate: {hints.WinRate.ToString("P2").PadLeft(7)})\n");
+
+                for (var j = 0; j < jumps.Length; j++) {
+                    var jump = jumps[j];
+                    output.Append($"  - Jump {jump.From} over {jump.Over} (Possibilities: {hints.JumpHints[j].Possibilities.ToString("N0").PadLeft(7)} - Wins: {hints.JumpHints[j].Wins.ToString("N0").PadLeft(6)} - Win Rate: {hints.JumpHints[j].WinRate.ToString("P2").PadLeft(7)})\n");
                 }
 
-                Console.WriteLine();
-                Console.WriteLine();
-                Console.Write("Choose the peg to jump with: ");
+                Console.WriteLine(output);
+
+                Console.SetCursorPosition(left, top);
             } else {
+                Console.Write("Choose the peg to jump with: ");
+
+                var left = Console.CursorLeft;
+                var top = Console.CursorTop;
+
+                Console.WriteLine();
+                Console.WriteLine();
+                Console.WriteLine();
                 GameInterface.PrintJumps(jumps);
                 Console.WriteLine("Press 'H' for hints");
-                Console.Write("Choose the peg to jump with: ");
+
+                Console.SetCursorPosition(left, top);
             }
 
             Func<char, bool> CanJumpFrom = (char selectedPeg) => selectedPeg == 'H' || CanJump(jumps, selectedPeg);
@@ -206,6 +261,8 @@ namespace peggame
             Console.WriteLine(from);
 
             if (from == null) {
+                GameInterface.PrintPegs(pegs);
+
                 return false;
             }
 
@@ -239,7 +296,7 @@ namespace peggame
             GameInterface.PrintPegs(pegs);
 
             // Over selection was aborted, ask for the From selection again
-            return PerformNextJump(pegs);
+            return PerformNextJump(pegs, showHints);
         }
     }
 }

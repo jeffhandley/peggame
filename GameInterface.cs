@@ -44,7 +44,7 @@ namespace peggame
 
             for (var j = 0; j < jumps.Length; j++) {
                 var jump = jumps[j];
-                output.Append($"  {j + 1}. Jump {jump.From} over {jump.Over}.\n");
+                output.Append($"  - Jump {jump.From} over {jump.Over}\n");
             }
 
             Console.WriteLine(output);
