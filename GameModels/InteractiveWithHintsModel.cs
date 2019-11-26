@@ -15,7 +15,6 @@ namespace peggame
         {
             // Create a new set of active game records
             activeGameRecords = new List<(string Pegs, GameRecord GameRecord)>();
-            // GameInterface.RemovePeg(pegs, GameInterface.PegChars[startingPegIndex]);
         }
 
         private bool SimulateNextJump(Dictionary<char, bool> pegs)
@@ -93,20 +92,14 @@ namespace peggame
 
                 do {
                     GameInterface.PrintPegs(simulationPegs);
-                    Console.WriteLine("Calculating hints...");
+                    Console.WriteLine("Calculating hints... Press a key to abort.");
 
                     if (Console.KeyAvailable == true) {
-                        Console.WriteLine("Game paused. Press a key to continue.");
-
                         while (Console.KeyAvailable) {
                             Console.ReadKey(true);
                         }
 
-                        var unpause = Console.ReadKey(true).Key;
-
-                        if (unpause == ConsoleKey.Escape) {
-                            return;
-                        }
+                        return;
                     }
 
                     if (!SimulateNextJump(simulationPegs)) {
@@ -130,7 +123,6 @@ namespace peggame
             List<GameRecord> records;
 
             if (!allGameRecords.TryGetValue(new String(pegsForRecords), out records)) {
-                records = new List<GameRecord>();
                 var historyKey = new String(pegsForRecords);
 
                 if (!history.ContainsKey(historyKey)) {
@@ -138,6 +130,8 @@ namespace peggame
 
                     GameInterface.PrintPegs(pegs);
                 }
+
+                records = new List<GameRecord>();
 
                 foreach (var gameRecord in history[historyKey]) {
                     if (history.ContainsKey(new String(gameRecord.PegsRemaining))) {
@@ -168,7 +162,11 @@ namespace peggame
 
             public decimal WinRate {
                 get {
-                    return (decimal)Wins / (decimal)Possibilities;
+                    if (Possibilities > 0) {
+                        return (decimal)Wins / (decimal)Possibilities;
+                    }
+
+                    return (decimal)0;
                 }
             }
         }
@@ -185,9 +183,9 @@ namespace peggame
 
         private GameHints GetHints(Dictionary<char, bool> pegs)
         {
-            var hints = new GameHints();
-
             var gameRecords = GetAllGameRecords(pegs);
+
+            var hints = new GameHints();
             var jumps = GameInterface.GetPossibleJumps(pegs);
             var wins = gameRecords.FindAll(x => x.PegsRemaining.Length == 1);
 
