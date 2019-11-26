@@ -83,7 +83,7 @@ namespace peggame
         public virtual void PrintStats() {
         }
 
-        static bool CanJump(Jump[] jumps, char from, char? over = (char?)null) {
+        static protected bool CanJump(Jump[] jumps, char from, char? over = (char?)null) {
             foreach (var jump in jumps) {
                 if (jump.From == from && (over == null || jump.Over == over.Value)) {
                     return true;
@@ -93,12 +93,12 @@ namespace peggame
             return false;
         }
 
-        static char? ReadPeg(Func<char, bool> isAllowed) {
+        static protected char? ReadPeg(Func<char, bool> isAllowed) {
             while (true) {
                 var key = Console.ReadKey(true);
                 var keyChar = Char.ToUpper(key.KeyChar);
 
-                if (Array.IndexOf(GameInterface.PegChars, keyChar) > -1 && isAllowed(keyChar) == true) {
+                if (isAllowed(keyChar) == true) {
                     return keyChar;
                 } else if (key.Key == ConsoleKey.Escape) {
                     return null;

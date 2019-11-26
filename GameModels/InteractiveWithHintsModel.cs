@@ -5,14 +5,14 @@ using peggame.History;
 
 namespace peggame
 {
-    class InteractiveWithHintsModel : IGameModel
+    class InteractiveWithHintsModel : InteractiveModel
     {
         int startingPegIndex = 0;
         Dictionary<string, List<GameRecord>> history = new Dictionary<string, List<GameRecord>>();
         List<(string Pegs, GameRecord GameRecord)> activeGameRecords;
         Dictionary<string, List<GameRecord>> allGameRecords = new Dictionary<string, List<GameRecord>>();
 
-        public bool RemoveStartingPeg(Dictionary<char, bool> pegs)
+        public override bool RemoveStartingPeg(Dictionary<char, bool> pegs)
         {
             // Create a new set of active game records
             activeGameRecords = new List<(string Pegs, GameRecord GameRecord)>();
@@ -22,7 +22,7 @@ namespace peggame
             return true;
         }
 
-        public bool PerformNextJump(Dictionary<char, bool> pegs)
+        public override bool PerformNextJump(Dictionary<char, bool> pegs)
         {
             var remainingPegsBefore = new String(GameInterface.GetRemainingPegs(pegs));
             var jumps = GameInterface.GetPossibleJumps(pegs);
@@ -67,7 +67,7 @@ namespace peggame
             return true;
         }
 
-        public bool PlayAgain(Dictionary<char, bool> pegs)
+        public override bool PlayAgain(Dictionary<char, bool> pegs)
         {
             foreach (var record in activeGameRecords) {
                 if (!history.ContainsKey(record.Pegs)) {
@@ -98,8 +98,6 @@ namespace peggame
 
         private void ReplayGame()
         {
-            var model = new InteractiveModel();
-
             Dictionary<char, bool> pegs;
 
             do
@@ -107,15 +105,15 @@ namespace peggame
                 pegs = GameInterface.InitializePegs();
                 GameInterface.PrintPegs(pegs);
 
-                if (!model.RemoveStartingPeg(pegs)) {
-                    model.PrintStats();
+                if (!base.RemoveStartingPeg(pegs)) {
+                    base.PrintStats();
                     return;
                 }
 
                 GameInterface.PrintPegs(pegs);
 
                 do {
-                    model.PrintStats();
+                    base.PrintStats();
 
                     if (Console.KeyAvailable == true) {
                         Console.WriteLine("Game paused. Press a key to continue.");
@@ -141,10 +139,10 @@ namespace peggame
                 }
                 while (GameInterface.GetPossibleJumps(pegs).Length > 0);
             }
-            while(model.PlayAgain(pegs));
+            while(base.PlayAgain(pegs));
         }
 
-        public void PrintStats()
+        public override void PrintStats()
         {
             var output = new System.Text.StringBuilder();
 
@@ -229,7 +227,7 @@ namespace peggame
                 Console.Write("Choose the peg to jump with (press 'H' for hints): ");
             }
 
-            Func<char, bool> CanJumpFrom = (char selectedPeg) => CanJump(jumps, selectedPeg);
+            Func<char, bool> CanJumpFrom = (char selectedPeg) => selectedPeg == 'H' || CanJump(jumps, selectedPeg);
 
             var from = ReadPeg(CanJumpFrom);
             Console.WriteLine(from);
@@ -250,7 +248,7 @@ namespace peggame
                 Console.Write("Choose the peg to jump over: ");
             }
 
-            Func<char, bool> CanJumpTo = (char selectedPeg) => CanJump(jumps, from.Value, selectedPeg);
+            Func<char, bool> CanJumpTo = (char selectedPeg) => selectedPeg == 'H' || CanJump(jumps, from.Value, selectedPeg);
 
             var over = ReadPeg(CanJumpTo);
             Console.WriteLine(over);
@@ -270,31 +268,6 @@ namespace peggame
             }
 
             return PerformNextJump(pegs);
-        }
-
-        static bool CanJump(Jump[] jumps, char from, char? over = (char?)null) {
-            foreach (var jump in jumps) {
-                if (jump.From == from && (over == null || jump.Over == over.Value)) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        static char? ReadPeg(Func<char, bool> isAllowed) {
-            while (true) {
-                var key = Console.ReadKey(true);
-                var keyChar = Char.ToUpper(key.KeyChar);
-
-                if (Array.IndexOf(GameInterface.PegChars, keyChar) > -1 && isAllowed(keyChar) == true) {
-                    return keyChar;
-                } else if (key.Key == ConsoleKey.Escape) {
-                    return null;
-                } else if (Char.ToUpper(key.KeyChar) == 'H') {
-                    return 'H';
-                }
-            }
         }
     }
 }
