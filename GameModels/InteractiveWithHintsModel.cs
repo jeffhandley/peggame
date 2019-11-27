@@ -24,14 +24,7 @@ namespace peggame
             var hintsReady = false;
 
             if (showHints) {
-                var pegsRemaining = new String(GameInterface.GetRemainingPegs(pegs));
-
-                if (!historyCompleted.Contains(pegsRemaining)) {
-                    hintsReady = CalculateGameStats(pegs);
-                    GameInterface.PrintPegs(pegs);
-                } else {
-                    hintsReady = true;
-                }
+                hintsReady = CalculateGameStats(pegs);
             }
 
             if (hintsReady) {
@@ -75,6 +68,10 @@ namespace peggame
 
             Func<char, bool> CanJumpFrom = (char selectedPeg) => selectedPeg == 'H' || CanJump(jumps, selectedPeg);
 
+            // Calculate game stats in the background, which will
+            // abort if a key becomes available
+            CalculateGameStats(pegs, false);
+
             var from = ReadPeg(CanJumpFrom);
             Console.WriteLine(from);
 
@@ -91,6 +88,10 @@ namespace peggame
             Console.Write("Choose the peg to jump over: ");
 
             Func<char, bool> CanJumpTo = (char selectedPeg) => selectedPeg == 'H' || CanJump(jumps, from.Value, selectedPeg);
+
+            // Calculate game stats in the background, which will
+            // abort if a key becomes available
+            CalculateGameStats(pegs, false);
 
             var over = ReadPeg(CanJumpTo);
             Console.WriteLine(over);
@@ -186,6 +187,10 @@ namespace peggame
 
         private bool CalculateGameStats(Dictionary<char, bool> pegs, bool showProgress = true)
         {
+            if (historyCompleted.Contains(new String(GameInterface.GetRemainingPegs(pegs)))) {
+                return true;
+            }
+
             do
             {
                 var simulationPegs = new Dictionary<char, bool>(pegs);
