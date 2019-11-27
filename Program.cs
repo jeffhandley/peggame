@@ -16,7 +16,7 @@ namespace peggame
             } else if (Array.IndexOf(args, "-nohints") >= 0) {
                 model = new InteractiveModel();
             } else {
-                model = new InteractiveWithHintsModel();
+                model = new InteractiveWithHintsModel(args);
             }
 
             Dictionary<char, bool> pegs;

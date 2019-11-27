@@ -5,12 +5,29 @@ using peggame.History;
 
 namespace peggame
 {
+    enum DifficultyLevel
+    {
+        Easy = 1,
+        Medium = 2,
+        Hard = 3
+    }
+
     class InteractiveWithHintsModel : InteractiveModel
     {
+        DifficultyLevel difficulty = DifficultyLevel.Medium;
         Dictionary<string, List<GameRecord>> allGameRecords = new Dictionary<string, List<GameRecord>>();
         Dictionary<string, List<GameRecord>> history = new Dictionary<string, List<GameRecord>>();
         List<string> historyCompleted = new List<string>();
         List<(string Pegs, GameRecord GameRecord)> activeGameRecords;
+
+        public InteractiveWithHintsModel(string[] args)
+        {
+            if (Array.IndexOf(args, "-easy") >= 0) {
+                difficulty = DifficultyLevel.Easy;
+            } else if (Array.IndexOf(args, "-hard") >= 0) {
+                difficulty = DifficultyLevel.Hard;
+            }
+        }
 
         public override bool PerformNextJump(Dictionary<char, bool> pegs)
         {
@@ -23,8 +40,9 @@ namespace peggame
 
             var hintsReady = false;
 
-            if (showHints) {
-                hintsReady = CalculateGameStats(pegs);
+            if (showHints || difficulty == DifficultyLevel.Easy) {
+                hintsReady = CalculateGameStats(pegs, true);
+                GameInterface.PrintPegs(pegs);
             }
 
             if (hintsReady) {
@@ -35,6 +53,7 @@ namespace peggame
                 var left = Console.CursorLeft;
                 var top = Console.CursorTop;
 
+                Console.WriteLine();
                 Console.WriteLine();
                 Console.WriteLine();
                 Console.WriteLine();
@@ -60,6 +79,8 @@ namespace peggame
                 Console.WriteLine();
                 Console.WriteLine();
                 Console.WriteLine();
+                Console.WriteLine();
+
                 GameInterface.PrintJumps(jumps);
                 Console.WriteLine("Press 'H' for hints");
 
@@ -70,7 +91,7 @@ namespace peggame
 
             // Calculate game stats in the background, which will
             // abort if a key becomes available
-            CalculateGameStats(pegs, false);
+            hintsReady = CalculateGameStats(pegs, false);
 
             var from = ReadPeg(CanJumpFrom);
             Console.WriteLine(from);
@@ -91,7 +112,7 @@ namespace peggame
 
             // Calculate game stats in the background, which will
             // abort if a key becomes available
-            CalculateGameStats(pegs, false);
+            hintsReady = CalculateGameStats(pegs, false);
 
             var over = ReadPeg(CanJumpTo);
             Console.WriteLine(over);
@@ -101,8 +122,26 @@ namespace peggame
 
                 return PerformNextJump(pegs, true);
             } else if (over != null) {
-                foreach (var jump in jumps) {
+                for (var jumpIndex = 0; jumpIndex < jumps.Length; jumpIndex++) {
+                    var jump = jumps[jumpIndex];
+
                     if (jump.From == from && jump.Over == over) {
+                        if (hintsReady && difficulty != DifficultyLevel.Hard) {
+                            var hints = GetHints(pegs);
+
+                            if (hints.Wins > 0 && hints.JumpHints[jumpIndex].Wins == 0) {
+                                Console.Write("This might not be the best jump. Press ESC to choose another jump or any other key to continue. ");
+
+                                var advice = Console.ReadKey(true);
+
+                                if (advice.Key == ConsoleKey.Escape) {
+                                    GameInterface.PrintPegs(pegs);
+
+                                    return PerformNextJump(pegs, showHints);
+                                }
+                            }
+                        }
+
                         GameInterface.PerformJump(pegs, jump);
 
                         return true;
@@ -185,7 +224,7 @@ namespace peggame
             return records;
         }
 
-        private bool CalculateGameStats(Dictionary<char, bool> pegs, bool showProgress = true)
+        private bool CalculateGameStats(Dictionary<char, bool> pegs, bool showProgress)
         {
             if (historyCompleted.Contains(new String(GameInterface.GetRemainingPegs(pegs)))) {
                 return true;
