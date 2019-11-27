@@ -9,6 +9,7 @@ namespace peggame
     {
         Dictionary<string, List<GameRecord>> allGameRecords = new Dictionary<string, List<GameRecord>>();
         Dictionary<string, List<GameRecord>> history = new Dictionary<string, List<GameRecord>>();
+        List<string> historyCompleted = new List<string>();
         List<(string Pegs, GameRecord GameRecord)> activeGameRecords;
 
         public override bool PerformNextJump(Dictionary<char, bool> pegs)
@@ -20,7 +21,20 @@ namespace peggame
         {
             var jumps = GameInterface.GetPossibleJumps(pegs);
 
+            var hintsReady = false;
+
             if (showHints) {
+                var pegsRemaining = new String(GameInterface.GetRemainingPegs(pegs));
+
+                if (!historyCompleted.Contains(pegsRemaining)) {
+                    hintsReady = CalculateGameStats(pegs);
+                    GameInterface.PrintPegs(pegs);
+                } else {
+                    hintsReady = true;
+                }
+            }
+
+            if (hintsReady) {
                 var hints = GetHints(pegs);
 
                 Console.Write("Choose the peg to jump with: ");
@@ -68,9 +82,7 @@ namespace peggame
                 GameInterface.PrintPegs(pegs);
 
                 return false;
-            }
-
-            if (from == 'H') {
+            } else if (from == 'H') {
                 GameInterface.PrintPegs(pegs);
 
                 return PerformNextJump(pegs, true);
@@ -127,7 +139,7 @@ namespace peggame
                 var jumpHints = new Hints();
                 jumpHints.Possibilities = jumpPossibilities.Count;
                 jumpHints.Wins = jumpPossibilities.FindAll(x => x.PegsRemaining.Length == 1).Count;
-                jumpHints.BestScore = jumpPossibilities[0].PegsRemaining.Length;
+                jumpHints.BestScore = jumpPossibilities.Count > 0 ? jumpPossibilities[0].PegsRemaining.Length : 0;
 
                 hints.JumpHints.Add(jumpIndex, jumpHints);
             }
@@ -148,13 +160,6 @@ namespace peggame
 
             if (!allGameRecords.TryGetValue(new String(pegsForRecords), out records)) {
                 var historyKey = new String(pegsForRecords);
-
-                if (!history.ContainsKey(historyKey)) {
-                    CalculateGameStats(pegs);
-
-                    GameInterface.PrintPegs(pegs);
-                }
-
                 records = new List<GameRecord>();
 
                 foreach (var gameRecord in history[historyKey]) {
@@ -179,7 +184,7 @@ namespace peggame
             return records;
         }
 
-        private void CalculateGameStats(Dictionary<char, bool> pegs)
+        private bool CalculateGameStats(Dictionary<char, bool> pegs, bool showProgress = true)
         {
             do
             {
@@ -187,15 +192,13 @@ namespace peggame
                 BeginSimulation(simulationPegs);
 
                 do {
-                    GameInterface.PrintPegs(simulationPegs);
-                    Console.WriteLine("Calculating hints... Press a key to abort.");
+                    if (showProgress) {
+                        GameInterface.PrintPegs(simulationPegs);
+                        Console.WriteLine("Calculating hints... Press a key to abort.");
+                    }
 
                     if (Console.KeyAvailable == true) {
-                        while (Console.KeyAvailable) {
-                            Console.ReadKey(true);
-                        }
-
-                        return;
+                        return false;
                     }
 
                     if (!SimulateNextJump(simulationPegs)) {
@@ -205,6 +208,8 @@ namespace peggame
                 while (GameInterface.GetPossibleJumps(simulationPegs).Length > 0);
             }
             while(FinishSimulation(pegs));
+
+            return true;
         }
 
         private void BeginSimulation(Dictionary<char, bool> pegs)
@@ -273,6 +278,8 @@ namespace peggame
             bool hasRemainingPaths = lastAttempt.JumpList.Exists(x => x.JumpIndex > 0);
 
             if (!hasRemainingPaths) {
+                historyCompleted.Add(remainingPegs);
+
                 return false;
             }
 
