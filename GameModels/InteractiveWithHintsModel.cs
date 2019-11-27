@@ -60,11 +60,11 @@ namespace peggame
 
                 var output = new System.Text.StringBuilder();
 
-                output.Append($"Possible Jumps:   (Possibilities: {hints.Possibilities.ToString("N0").PadLeft(7)} - Best Score: {hints.BestScore} - Wins: {hints.Wins.ToString("N0").PadLeft(6)} - Win Rate: {hints.WinRate.ToString("P2").PadLeft(7)})\n");
+                output.Append($"Possible Jumps:   (Possibilities: {hints.Possibilities.ToString("N0").PadLeft(7)} - Best/Worst Score: {hints.BestScore}/{hints.WorstScore} - Wins: {hints.Wins.ToString("N0").PadLeft(6)} - Win Rate: {hints.WinRate.ToString("P2").PadLeft(7)})\n");
 
                 for (var j = 0; j < jumps.Length; j++) {
                     var jump = jumps[j];
-                    output.Append($"  - Jump {jump.From} over {jump.Over} (Possibilities: {hints.JumpHints[j].Possibilities.ToString("N0").PadLeft(7)} - Best Score: {hints.JumpHints[j].BestScore} - Wins: {hints.JumpHints[j].Wins.ToString("N0").PadLeft(6)} - Win Rate: {hints.JumpHints[j].WinRate.ToString("P2").PadLeft(7)})\n");
+                    output.Append($"  - Jump {jump.From} over {jump.Over} (Possibilities: {hints.JumpHints[j].Possibilities.ToString("N0").PadLeft(7)} - Best/Worst Score: {hints.JumpHints[j].BestScore}/{hints.JumpHints[j].WorstScore} - Wins: {hints.JumpHints[j].Wins.ToString("N0").PadLeft(6)} - Win Rate: {hints.JumpHints[j].WinRate.ToString("P2").PadLeft(7)})\n");
                 }
 
                 Console.WriteLine(output);
@@ -169,6 +169,7 @@ namespace peggame
             hints.Possibilities = gameRecords.Count;
             hints.Wins = wins.Count;
             hints.BestScore = gameRecords[0].PegsRemaining.Length;
+            hints.WorstScore = gameRecords[gameRecords.Count - 1].PegsRemaining.Length;
 
             for (var jumpIndex = 0; jumpIndex < jumps.Length; jumpIndex++) {
                 var jumpPossibilities = gameRecords.FindAll(x => x.JumpList[0].JumpIndex == jumpIndex);
@@ -179,7 +180,8 @@ namespace peggame
                 var jumpHints = new Hints();
                 jumpHints.Possibilities = jumpPossibilities.Count;
                 jumpHints.Wins = jumpPossibilities.FindAll(x => x.PegsRemaining.Length == 1).Count;
-                jumpHints.BestScore = jumpPossibilities.Count > 0 ? jumpPossibilities[0].PegsRemaining.Length : 0;
+                jumpHints.BestScore = jumpPossibilities[0].PegsRemaining.Length;
+                jumpHints.WorstScore = jumpPossibilities[jumpPossibilities.Count - 1].PegsRemaining.Length;
 
                 hints.JumpHints.Add(jumpIndex, jumpHints);
             }
