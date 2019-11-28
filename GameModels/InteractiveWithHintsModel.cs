@@ -37,7 +37,6 @@ namespace peggame
         protected bool PerformNextJump(Dictionary<char, bool> pegs, bool showHints)
         {
             var jumps = GameInterface.GetPossibleJumps(pegs);
-
             var hintsReady = false;
 
             if (showHints || difficulty == DifficultyLevel.Easy) {
@@ -45,58 +44,45 @@ namespace peggame
                 GameInterface.PrintPegs(pegs);
             }
 
+            Console.Write("Choose the peg to jump with: ");
+
+            var left = Console.CursorLeft;
+            var top = Console.CursorTop;
+
+            Console.WriteLine();
+            Console.WriteLine();
+            Console.WriteLine();
+            Console.WriteLine();
+
             if (hintsReady) {
                 var hints = GetHints(pegs);
-
-                Console.Write("Choose the peg to jump with: ");
-
-                var left = Console.CursorLeft;
-                var top = Console.CursorTop;
-
-                Console.WriteLine();
-                Console.WriteLine();
-                Console.WriteLine();
-                Console.WriteLine();
-
                 var output = new System.Text.StringBuilder();
 
-                output.Append($"Possible Jumps:   (Possibilities: {hints.Possibilities.ToString("N0").PadLeft(7)} - Best/Worst Score: {hints.BestScore}/{hints.WorstScore} - Wins: {hints.Wins.ToString("N0").PadLeft(6)} - Win Rate: {hints.WinRate.ToString("P2").PadLeft(7)})\n");
+                output.Append($"Possible Jumps:   (Possibilities: {hints.Possibilities.ToString("N0").PadLeft(9)} - Best/Worst Score: {hints.BestScore.ToString("N0").PadLeft(2)}/{hints.WorstScore.ToString("N0").PadRight(2)} - Wins: {hints.Wins.ToString("N0").PadLeft(7)} - Win Rate: {hints.WinRate.ToString("P2").PadLeft(7)})\n");
 
                 for (var j = 0; j < jumps.Length; j++) {
                     var jump = jumps[j];
-                    output.Append($"  - Jump {jump.From} over {jump.Over} (Possibilities: {hints.JumpHints[j].Possibilities.ToString("N0").PadLeft(7)} - Best/Worst Score: {hints.JumpHints[j].BestScore}/{hints.JumpHints[j].WorstScore} - Wins: {hints.JumpHints[j].Wins.ToString("N0").PadLeft(6)} - Win Rate: {hints.JumpHints[j].WinRate.ToString("P2").PadLeft(7)})\n");
+                    output.Append($"  - Jump {jump.From} over {jump.Over} (Possibilities: {hints.JumpHints[j].Possibilities.ToString("N0").PadLeft(9)} - Best/Worst Score: {hints.JumpHints[j].BestScore.ToString("N0").PadLeft(2)}/{hints.JumpHints[j].WorstScore.ToString("N0").PadRight(2)} - Wins: {hints.JumpHints[j].Wins.ToString("N0").PadLeft(7)} - Win Rate: {hints.JumpHints[j].WinRate.ToString("P2").PadLeft(7)})\n");
                 }
 
                 Console.WriteLine(output);
-
-                Console.SetCursorPosition(left, top);
             } else {
-                Console.Write("Choose the peg to jump with: ");
-
-                var left = Console.CursorLeft;
-                var top = Console.CursorTop;
-
-                Console.WriteLine();
-                Console.WriteLine();
-                Console.WriteLine();
-                Console.WriteLine();
-
                 GameInterface.PrintJumps(jumps);
                 Console.WriteLine("Press 'H' for hints");
-
-                Console.SetCursorPosition(left, top);
             }
 
-            Func<char, bool> CanJumpFrom = (char selectedPeg) => selectedPeg == 'H' || CanJump(jumps, selectedPeg);
+            Console.SetCursorPosition(left, top);
 
             // Calculate game stats in the background, which will
             // abort if a key becomes available
             hintsReady = CalculateGameStats(pegs, false);
 
+            Func<char, bool> CanJumpFrom = (char selectedPeg) => selectedPeg == 'H' || CanJump(jumps, selectedPeg);
             var from = ReadPeg(CanJumpFrom);
             Console.WriteLine(from);
 
             if (from == null) {
+                // ESC was pressed, aborting the game
                 GameInterface.PrintPegs(pegs);
 
                 return false;
@@ -108,16 +94,16 @@ namespace peggame
 
             Console.Write("Choose the peg to jump over: ");
 
-            Func<char, bool> CanJumpTo = (char selectedPeg) => selectedPeg == 'H' || CanJump(jumps, from.Value, selectedPeg);
-
             // Calculate game stats in the background, which will
             // abort if a key becomes available
             hintsReady = CalculateGameStats(pegs, false);
 
-            var over = ReadPeg(CanJumpTo);
+            Func<char, bool> CanJumpOver = (char selectedPeg) => selectedPeg == 'H' || CanJump(jumps, from.Value, selectedPeg);
+            var over = ReadPeg(CanJumpOver);
             Console.WriteLine(over);
 
             if (over == 'H') {
+                // ESC was pressed, aborting the jump; restart the jump
                 GameInterface.PrintPegs(pegs);
 
                 return PerformNextJump(pegs, true);
@@ -126,7 +112,7 @@ namespace peggame
                     var jump = jumps[jumpIndex];
 
                     if (jump.From == from && jump.Over == over) {
-                        if (hintsReady && difficulty != DifficultyLevel.Hard) {
+                        if (hintsReady && (int)difficulty < (int)DifficultyLevel.Hard) {
                             var hints = GetHints(pegs);
 
                             if (hints.Wins > 0 && hints.JumpHints[jumpIndex].Wins == 0) {
@@ -155,7 +141,7 @@ namespace peggame
             return PerformNextJump(pegs, showHints);
         }
 
-        private GameHints GetHints(Dictionary<char, bool> pegs)
+        public GameHints GetHints(Dictionary<char, bool> pegs)
         {
             var gameRecords = GetAllGameRecords(pegs);
             gameRecords.Sort(delegate(GameRecord record1, GameRecord record2) {
@@ -226,7 +212,7 @@ namespace peggame
             return records;
         }
 
-        private bool CalculateGameStats(Dictionary<char, bool> pegs, bool showProgress)
+        public bool CalculateGameStats(Dictionary<char, bool> pegs, bool showProgress)
         {
             if (historyCompleted.Contains(new String(GameInterface.GetRemainingPegs(pegs)))) {
                 return true;

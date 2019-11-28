@@ -6,14 +6,6 @@ namespace peggame
     class GameInterface
     {
         public static char[] PegChars = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'A', 'B', 'C', 'D', 'E'};
-        public static char[][] Others = new char[][]
-        {
-            new char[] {'A', 'B', '7', 'C', '8', '4', 'D', '9', '5', '2', 'E', '0', '6', '3', '1'},
-            new char[] {'E', '0', 'D', '6', '9', 'C', '3', '5', '8', 'B', '1', '2', '4', '7', 'A'},
-            new char[] {'1', '3', '2', '6', '5', '4', '0', '9', '8', '7', 'E', 'D', 'C', 'B', 'A'},
-            new char[] {'A', '7', 'B', '4', '8', 'C', '2', '5', '9', 'D', '1', '3', '6', '0', 'E'},
-            new char[] {'E', 'D', '0', 'C', '9', '6', 'B', '8', '5', '3', 'A', '7', '4', '2', '1'}
-        };
 
         public static Dictionary<char, bool> InitializePegs() {
             var pegs = new Dictionary<char, bool>();
